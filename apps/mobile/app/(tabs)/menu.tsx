@@ -21,8 +21,8 @@ const CATEGORIES = ['chicken', 'kadai'] as const;
 type CategoryId = typeof CATEGORIES[number];
 
 const CATEGORY_LABELS: Record<CategoryId, string> = {
-    chicken: '🐔 Chicken',
-    kadai: '🐦 Kaadai',
+    chicken: 'Chicken',
+    kadai: 'Kaadai',
 };
 
 import { getProductImageSource } from '../../utils/imageResolver';

@@ -316,15 +316,14 @@ const styles = StyleSheet.create({
 
     // Best Sellers
     bestSellerCard: {
-        width: 165,
-        height: 200,
+        width: 150,
         backgroundColor: Colors.white,
         borderRadius: BorderRadius.lg,
         overflow: 'hidden',
         ...Shadows.md,
     },
     imageWrapper: { position: 'relative' },
-    bestSellerImage: { width: '100%', height: 105 },
+    bestSellerImage: { width: 150, height: 115 },
     portionBadge: {
         position: 'absolute',
         bottom: 6,
@@ -335,7 +334,7 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
     },
     portionBadgeText: { color: Colors.white, fontSize: 9, fontWeight: FontWeight.semibold },
-    bestSellerInfo: { flex: 1, padding: 8, justifyContent: 'space-between' },
+    bestSellerInfo: { padding: 10, gap: 6 },
     bestSellerName: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Colors.brand.navy },
     bestSellerLocal: { fontSize: 10, color: Colors.gray[500], marginTop: 1 },
     priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },

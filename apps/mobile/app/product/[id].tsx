@@ -77,7 +77,7 @@ export default function ProductDetailScreen() {
             imageURL: product.imageURL,
         };
         addItem(cartItem);
-        Alert.alert('Added to Cart! 🛒', `${qty} ${product.unit === 'kg' ? 'kg' : 'pcs'} of ${product.name} added.`, [
+        Alert.alert('Added to Cart', `${qty} ${product.unit === 'kg' ? 'kg' : 'pcs'} of ${product.name} added.`, [
             { text: 'Continue Shopping' },
             { text: 'View Cart', onPress: () => router.push('/(tabs)/cart') },
         ]);
