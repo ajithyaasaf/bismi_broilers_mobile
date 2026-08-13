@@ -1,0 +1,22 @@
+{
+  "name": "bismi-platform",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Bismi Broilers — Monorepo (Web + Mobile + Shared Core)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm run dev --workspace=apps/mobile",
+    "build:core": "npm run build --workspace=packages/core",
+    "typecheck": "npm run typecheck --workspace=packages/core && npm run typecheck --workspace=apps/mobile",
+    "lint": "npm run lint --workspace=packages/core && npm run lint --workspace=apps/mobile"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
