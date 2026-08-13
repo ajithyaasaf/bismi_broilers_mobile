@@ -123,12 +123,12 @@ export default function ProductDetailScreen() {
 
                     {/* Tags */}
                     <View style={styles.tagsRow}>
-                        <Badge label="🚚 Free Delivery" variant="success" size="sm" />
+                        <Badge label="Free Delivery" variant="success" size="sm" />
                         {product.isAvailableToday === false && (
                             <Badge label="Not Available Today" variant="error" size="sm" />
                         )}
-                        {product.todayLabel && (
-                            <Badge label={product.todayLabel} variant="brand" size="sm" />
+                        {Boolean(product.todayLabel) && (
+                            <Badge label={product.todayLabel!} variant="brand" size="sm" />
                         )}
                     </View>
 

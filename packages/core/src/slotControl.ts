@@ -107,7 +107,7 @@ export async function getOrderCountForSlot(date: string, slotKey: string): Promi
         const snapshot = await getCountFromServer(q);
         return snapshot.data().count;
     } catch (err) {
-        console.error(`[slotControl] getOrderCountForSlot(${date}, ${slotKey}) failed:`, err);
+        console.warn(`[slotControl] getOrderCountForSlot(${date}, ${slotKey}) fallback to 0 (permission/network):`, err);
         return 0;
     }
 }
