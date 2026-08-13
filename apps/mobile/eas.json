@@ -1,0 +1,44 @@
+{
+  "cli": {
+    "version": ">= 7.0.0",
+    "requireCommit": false
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "PLACEHOLDER",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "PLACEHOLDER",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "PLACEHOLDER",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "PLACEHOLDER",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "PLACEHOLDER",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "PLACEHOLDER"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./play-store-key.json",
+        "track": "internal"
+      }
+    }
+  }
+}
