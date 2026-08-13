@@ -7,6 +7,8 @@ import { CartProvider } from '../context/CartContext';
 import { CustomerProvider } from '../context/CustomerContext';
 import { Colors } from '../constants/Colors';
 
+import { FloatingCartBar } from '../components/ui/FloatingCartBar';
+
 /**
  * Root Layout — wraps every screen with global providers.
  * Order: GestureHandler > SafeArea > Customer > Cart > Stack Navigation
@@ -55,13 +57,8 @@ export default function RootLayout() {
                                     gestureEnabled: false,
                                 }}
                             />
-
-                            {/* Track Order */}
-                            <Stack.Screen
-                                name="track-order"
-                                options={{ title: 'Track Order', headerBackTitle: 'Orders' }}
-                            />
                         </Stack>
+                        <FloatingCartBar />
                     </CartProvider>
                 </CustomerProvider>
             </SafeAreaProvider>

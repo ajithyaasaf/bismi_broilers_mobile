@@ -8,7 +8,9 @@
     "packages/*"
   ],
   "scripts": {
-    "mobile": "npm run dev --workspace=apps/mobile",
+    "mobile": "npm --prefix apps/mobile start",
+    "dev": "npm --prefix apps/mobile start",
+    "start:mobile": "npm --prefix apps/mobile start",
     "build:core": "npm run build --workspace=packages/core",
     "typecheck": "npm run typecheck --workspace=packages/core && npm run typecheck --workspace=apps/mobile",
     "lint": "npm run lint --workspace=packages/core && npm run lint --workspace=apps/mobile"

@@ -59,32 +59,43 @@ function TodayAvailableStrip() {
 
 import { getProductImageSource } from '../../utils/imageResolver';
 
+import { InlineStepper } from '../../components/ui/InlineStepper';
+
 // ─── Best Seller Card ─────────────────────────────────────
 function BestSellerCard({ product }: { product: MeatType }) {
+    const portionBadge = product.unit === 'piece' ? 'Per Piece' : 'Cleaned & Cut';
+
     return (
         <TouchableOpacity
             activeOpacity={0.88}
             style={styles.bestSellerCard}
             onPress={() => router.push(`/product/${product.id}`)}
         >
-            <Image
-                source={getProductImageSource(product.imageURL)}
-                style={styles.bestSellerImage}
-                resizeMode="cover"
-            />
+            <View style={styles.imageWrapper}>
+                <Image
+                    source={getProductImageSource(product.imageURL)}
+                    style={styles.bestSellerImage}
+                    resizeMode="cover"
+                />
+                <View style={styles.portionBadge}>
+                    <Text style={styles.portionBadgeText}>{portionBadge}</Text>
+                </View>
+            </View>
+
             <View style={styles.bestSellerInfo}>
-                <Text style={styles.bestSellerName} numberOfLines={2}>{product.name}</Text>
-                {product.localName && (
-                    <Text style={styles.bestSellerLocal}>{product.localName}</Text>
-                )}
-                <Text style={styles.bestSellerPrice}>
-                    {product.unit === 'piece'
-                        ? `${formatCurrency(product.pricePerPiece ?? 0)}/pc`
-                        : `${formatCurrency(product.pricePerKg)}/kg`}
-                </Text>
-                <View style={styles.bestSellerAddBtn}>
-                    <Ionicons name="add" size={14} color={Colors.white} />
-                    <Text style={styles.bestSellerAddBtnText}>Add</Text>
+                <View>
+                    <Text style={styles.bestSellerName} numberOfLines={1}>{product.name}</Text>
+                    {product.localName && (
+                        <Text style={styles.bestSellerLocal} numberOfLines={1}>{product.localName}</Text>
+                    )}
+                </View>
+                <View style={styles.priceRow}>
+                    <Text style={styles.bestSellerPrice}>
+                        {product.unit === 'piece'
+                            ? `${formatCurrency(product.pricePerPiece ?? 0)}/pc`
+                            : `${formatCurrency(product.pricePerKg)}/kg`}
+                    </Text>
+                    <InlineStepper product={product} compact />
                 </View>
             </View>
         </TouchableOpacity>
@@ -305,29 +316,30 @@ const styles = StyleSheet.create({
 
     // Best Sellers
     bestSellerCard: {
-        width: 155,
-        height: 240,
+        width: 165,
+        height: 200,
         backgroundColor: Colors.white,
         borderRadius: BorderRadius.lg,
         overflow: 'hidden',
         ...Shadows.md,
     },
-    bestSellerImage: { width: '100%', height: 110 },
-    bestSellerInfo: { flex: 1, padding: Spacing.sm, justifyContent: 'space-between' },
-    bestSellerName: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.brand.navy },
-    bestSellerLocal: { fontSize: FontSize.xs, color: Colors.gray[500], marginTop: 2 },
-    bestSellerPrice: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.brand.crimson, marginTop: 2 },
-    bestSellerAddBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: Colors.brand.crimson,
+    imageWrapper: { position: 'relative' },
+    bestSellerImage: { width: '100%', height: 105 },
+    portionBadge: {
+        position: 'absolute',
+        bottom: 6,
+        left: 6,
+        backgroundColor: 'rgba(15, 23, 42, 0.85)',
         borderRadius: BorderRadius.sm,
-        paddingVertical: 6,
-        marginTop: 4,
-        gap: 2,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
     },
-    bestSellerAddBtnText: { color: Colors.white, fontSize: FontSize.xs, fontWeight: FontWeight.semibold },
+    portionBadgeText: { color: Colors.white, fontSize: 9, fontWeight: FontWeight.semibold },
+    bestSellerInfo: { flex: 1, padding: 8, justifyContent: 'space-between' },
+    bestSellerName: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Colors.brand.navy },
+    bestSellerLocal: { fontSize: 10, color: Colors.gray[500], marginTop: 1 },
+    priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+    bestSellerPrice: { fontSize: FontSize.xs, fontWeight: FontWeight.extrabold, color: Colors.brand.crimson },
 
     // Info card
     infoCard: { marginHorizontal: Spacing.md },

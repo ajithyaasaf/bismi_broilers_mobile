@@ -27,11 +27,14 @@ const CATEGORY_LABELS: Record<CategoryId, string> = {
 
 import { getProductImageSource } from '../../utils/imageResolver';
 
+import { InlineStepper } from '../../components/ui/InlineStepper';
+
 // ─── Product Card ─────────────────────────────────────────
 function ProductCard({ product }: { product: MeatType }) {
     const price = product.unit === 'piece'
         ? `${formatCurrency(product.pricePerPiece ?? 0)}/pc`
         : `${formatCurrency(product.pricePerKg)}/kg`;
+    const portionBadge = product.unit === 'piece' ? 'Per Piece' : 'Cleaned & Cut';
 
     return (
         <TouchableOpacity
@@ -39,17 +42,23 @@ function ProductCard({ product }: { product: MeatType }) {
             style={styles.card}
             onPress={() => router.push(`/product/${product.id}`)}
         >
-            <Image
-                source={getProductImageSource(product.imageURL)}
-                style={styles.cardImage}
-                resizeMode="cover"
-            />
+            <View style={styles.cardImageWrapper}>
+                <Image
+                    source={getProductImageSource(product.imageURL)}
+                    style={styles.cardImage}
+                    resizeMode="cover"
+                />
+                <View style={styles.portionBadge}>
+                    <Text style={styles.portionBadgeText}>{portionBadge}</Text>
+                </View>
+            </View>
+
             <View style={styles.cardBody}>
                 <View style={styles.cardTop}>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.cardName} numberOfLines={2}>{product.name}</Text>
+                        <Text style={styles.cardName} numberOfLines={1}>{product.name}</Text>
                         {product.localName && (
-                            <Text style={styles.cardLocal}>{product.localName}</Text>
+                            <Text style={styles.cardLocal} numberOfLines={1}>{product.localName}</Text>
                         )}
                         <Text style={styles.cardDesc} numberOfLines={2}>{product.description}</Text>
                     </View>
@@ -59,13 +68,7 @@ function ProductCard({ product }: { product: MeatType }) {
                     {product.isAvailableToday === false ? (
                         <Badge label="Not Today" variant="error" size="sm" />
                     ) : (
-                        <TouchableOpacity
-                            style={styles.addBtn}
-                            onPress={() => router.push(`/product/${product.id}`)}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={styles.addBtnText}>+ Add</Text>
-                        </TouchableOpacity>
+                        <InlineStepper product={product} />
                     )}
                 </View>
             </View>
@@ -170,7 +173,18 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         ...Shadows.sm,
     },
+    cardImageWrapper: { position: 'relative' },
     cardImage: { width: 110, height: 110 },
+    portionBadge: {
+        position: 'absolute',
+        bottom: 6,
+        left: 6,
+        backgroundColor: 'rgba(15, 23, 42, 0.85)',
+        borderRadius: BorderRadius.sm,
+        paddingHorizontal: 5,
+        paddingVertical: 2,
+    },
+    portionBadgeText: { color: Colors.white, fontSize: 8, fontWeight: FontWeight.semibold },
     cardBody: { flex: 1, padding: Spacing.sm, justifyContent: 'space-between' },
     cardTop: { flex: 1 },
     cardName: { fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: Colors.brand.navy },
