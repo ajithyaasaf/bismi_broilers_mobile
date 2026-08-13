@@ -33,7 +33,10 @@ yarn-error.*
 # local env files
 .env*.local
 .env
-# typescript
+.env*
+!.env.example
+google-services.json
+GoogleService-Info.plist
 *.tsbuildinfo
 
 # generated native folders

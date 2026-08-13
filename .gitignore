@@ -3,5 +3,8 @@ dist/
 .expo/
 *.log
 .env
-.env.local
+.env*
+!.env.example
+google-services.json
+GoogleService-Info.plist
 .DS_Store
