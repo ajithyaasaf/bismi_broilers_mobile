@@ -84,12 +84,22 @@ export const FontSize = {
     '5xl': 38,
 } as const;
 
+import { Platform } from 'react-native';
+
 export const FontWeight = {
     regular: '400' as const,
     medium: '500' as const,
     semibold: '600' as const,
     bold: '700' as const,
     extrabold: '800' as const,
+} as const;
+
+export const FontFamily = {
+    regular: Platform.select({ web: 'Plus Jakarta Sans, sans-serif', default: 'PlusJakartaSans_400Regular' }),
+    medium: Platform.select({ web: 'Plus Jakarta Sans, sans-serif', default: 'PlusJakartaSans_500Medium' }),
+    semibold: Platform.select({ web: 'Plus Jakarta Sans, sans-serif', default: 'PlusJakartaSans_600SemiBold' }),
+    bold: Platform.select({ web: 'Plus Jakarta Sans, sans-serif', default: 'PlusJakartaSans_700Bold' }),
+    extrabold: Platform.select({ web: 'Plus Jakarta Sans, sans-serif', default: 'PlusJakartaSans_800ExtraBold' }),
 } as const;
 
 export const Shadows = {

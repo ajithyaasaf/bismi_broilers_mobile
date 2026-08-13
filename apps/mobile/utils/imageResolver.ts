@@ -26,24 +26,82 @@ const PRODUCT_IMAGE_MAP: Record<string, ImageSourcePropType> = {
 };
 
 /**
- * Resolve product image URL — supports both remote HTTP URLs (Firebase Storage)
- * and local web relative paths (/assets/images/...).
+ * Resolve product image URL — supports remote HTTP URLs (Firebase Storage),
+ * static web relative asset paths (/assets/images/...), and product name keyword matching.
  */
-export function getProductImageSource(imageURL?: string | null): ImageSourcePropType {
-    if (!imageURL) return FALLBACK_IMAGE;
+export function getProductImageSource(imageURL?: string | null, meatName?: string): ImageSourcePropType {
+    const searchTarget = `${imageURL ?? ''} ${meatName ?? ''}`.toLowerCase().trim();
+    if (!searchTarget) return FALLBACK_IMAGE;
 
     // Remote HTTP/HTTPS URL
-    if (imageURL.startsWith('http://') || imageURL.startsWith('https://')) {
+    if (imageURL && (imageURL.startsWith('http://') || imageURL.startsWith('https://'))) {
         return { uri: imageURL };
     }
 
-    // Local static web relative asset path
-    const local = PRODUCT_IMAGE_MAP[imageURL];
-    if (local) return local;
+    // Exact match in map
+    if (imageURL && PRODUCT_IMAGE_MAP[imageURL]) {
+        return PRODUCT_IMAGE_MAP[imageURL];
+    }
+
+    // Smart semantic keyword matching for cuts & meats
+    if (searchTarget.includes('biriyani') || searchTarget.includes('briyani')) {
+        return require('../assets/images/Product images/chicken/Briyani cut.webp');
+    }
+    if (searchTarget.includes('breast')) {
+        return require('../assets/images/Product images/chicken/Chicken Breasts.png');
+    }
+    if (searchTarget.includes('boneless cube') || searchTarget.includes('cubes')) {
+        return require('../assets/images/Product images/chicken/Boneless Cubes.png');
+    }
+    if (searchTarget.includes('boneless')) {
+        return require('../assets/images/Product images/chicken/chicken boneless.png');
+    }
+    if (searchTarget.includes('drumstick')) {
+        return require('../assets/images/Product images/chicken/Drumsticks.png');
+    }
+    if (searchTarget.includes('leg')) {
+        return require('../assets/images/Product images/chicken/Leg piece.png');
+    }
+    if (searchTarget.includes('wing')) {
+        return require('../assets/images/Product images/chicken/Chicken Wings.png');
+    }
+    if (searchTarget.includes('lollipop')) {
+        return require('../assets/images/Product images/chicken/chicken lollipop.png');
+    }
+    if (searchTarget.includes('keema')) {
+        return require('../assets/images/Product images/chicken/chicken keema.png');
+    }
+    if (searchTarget.includes('country') || searchTarget.includes('naatu')) {
+        return require('../assets/images/Product images/chicken/country chicken.png');
+    }
+    if (searchTarget.includes('gravy')) {
+        return require('../assets/images/Product images/chicken/Gravy cut.webp');
+    }
+    if (searchTarget.includes('quail egg')) {
+        return require('../assets/images/Product images/chicken/quail egg.png');
+    }
+    if (searchTarget.includes('egg')) {
+        return require('../assets/images/Product images/chicken/white egg.png');
+    }
+    if (searchTarget.includes('quail') || searchTarget.includes('kaada')) {
+        return require('../assets/images/Product images/Quail/quail.webp');
+    }
+    if (searchTarget.includes('whole')) {
+        return require('../assets/images/Product images/chicken/Raw Whole Chicken.png');
+    }
+    if (searchTarget.includes('small pieces') || searchTarget.includes('curry cut small')) {
+        return require('../assets/images/Product images/chicken/Chicken curry cut small pieces.png');
+    }
+    if (searchTarget.includes('large pieces') || searchTarget.includes('curry cut large')) {
+        return require('../assets/images/Product images/chicken/chicken curry cuts large pieces.png');
+    }
+    if (searchTarget.includes('curry')) {
+        return require('../assets/images/Product images/chicken/Curry Cuts.png');
+    }
 
     // Match by basename if exact key not found
     for (const [key, value] of Object.entries(PRODUCT_IMAGE_MAP)) {
-        if (imageURL.toLowerCase().includes(key.split('/').pop()?.toLowerCase() ?? '___never___')) {
+        if (searchTarget.includes(key.split('/').pop()?.toLowerCase() ?? '___never___')) {
             return value;
         }
     }

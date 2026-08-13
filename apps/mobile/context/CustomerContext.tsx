@@ -6,6 +6,8 @@ import { validateMobile } from '@bismi/core';
 export interface CustomerProfile {
     name: string;
     mobile: string;
+    deliveryZone?: string;
+    address?: string;
 }
 
 interface CustomerContextValue {
