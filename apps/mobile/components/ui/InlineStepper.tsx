@@ -4,17 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useCart } from '../../context/CartContext';
 import type { MeatType } from '@bismi/core';
-import { Colors, FontSize, FontWeight, BorderRadius, Spacing } from '../../constants/Colors';
+import { Colors, FontSize, FontWeight, FontFamily, BorderRadius, Spacing } from '../../constants/Colors';
 
 interface InlineStepperProps {
     product: MeatType;
     compact?: boolean;
+    fullWidth?: boolean;
 }
 
 const STEP = 0.25;
 const MIN_KG = 0.5;
 
-export function InlineStepper({ product, compact = false }: InlineStepperProps) {
+export function InlineStepper({ product, compact = false, fullWidth = false }: InlineStepperProps) {
     const { items, addItem, updateQuantity, removeItem } = useCart();
 
     const cartItem = items.find((i) => i.meatTypeId === product.id);
@@ -71,7 +72,11 @@ export function InlineStepper({ product, compact = false }: InlineStepperProps) 
         return (
             <TouchableOpacity
                 activeOpacity={0.8}
-                style={[styles.addBtn, compact && styles.addBtnCompact]}
+                style={[
+                    styles.addBtn,
+                    compact && styles.addBtnCompact,
+                    fullWidth && styles.btnFullWidth,
+                ]}
                 onPress={handleAddInitial}
             >
                 <Ionicons name="add" size={compact ? 14 : 16} color={Colors.white} />
@@ -84,12 +89,16 @@ export function InlineStepper({ product, compact = false }: InlineStepperProps) 
     const qtyLabel = isPerPiece ? `${currentQty} pc` : `${currentQty} kg`;
 
     return (
-        <View style={[styles.stepperContainer, compact && styles.stepperCompact]}>
+        <View style={[
+            styles.stepperContainer,
+            compact && styles.stepperCompact,
+            fullWidth && styles.btnFullWidth,
+        ]}>
             <TouchableOpacity
                 style={[styles.stepperBtn, compact && styles.stepperBtnCompact]}
                 onPress={handleDecrement}
                 activeOpacity={0.7}
-                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
                 <Ionicons name="remove" size={compact ? 15 : 18} color={Colors.white} />
             </TouchableOpacity>
@@ -102,7 +111,7 @@ export function InlineStepper({ product, compact = false }: InlineStepperProps) 
                 style={[styles.stepperBtn, compact && styles.stepperBtnCompact]}
                 onPress={handleIncrement}
                 activeOpacity={0.7}
-                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
                 <Ionicons name="add" size={compact ? 15 : 18} color={Colors.white} />
             </TouchableOpacity>
@@ -126,6 +135,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 5,
         minWidth: 64,
+    },
+    btnFullWidth: {
+        width: '100%',
+        minWidth: '100%',
+        paddingVertical: 6,
     },
     addBtnText: {
         color: Colors.white,
@@ -161,7 +175,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     stepperBtnCompact: {
-        paddingHorizontal: 4,
+        paddingHorizontal: 6,
         paddingVertical: 3,
     },
     stepperQtyBox: {
@@ -176,7 +190,7 @@ const styles = StyleSheet.create({
         fontWeight: FontWeight.extrabold,
     },
     stepperQtyTextCompact: {
-        fontSize: 11,
+        fontSize: 11.5,
         fontWeight: FontWeight.extrabold,
     },
 });

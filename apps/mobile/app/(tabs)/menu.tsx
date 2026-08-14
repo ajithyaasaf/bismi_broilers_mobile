@@ -3,7 +3,6 @@ import {
     View,
     Text,
     StyleSheet,
-    SectionList,
     TouchableOpacity,
     Image,
     TextInput,
@@ -31,8 +30,9 @@ const FILTER_CHIPS = [
     { key: 'kadai', label: 'Kaadai (Quail)', category: 'kadai' },
 ];
 
-// ─── Streamlined Product Card ──────────────────────────────
-function ProductCard({ product }: { product: MeatType }) {
+// ─── 2-Column Grid Product Card ───────────────────────────
+function ProductGridCard({ product }: { product: MeatType }) {
+    const isAvailable = product.isAvailableToday !== false;
     const priceText = product.unit === 'piece'
         ? `₹${product.pricePerPiece ?? 0}/pc`
         : `₹${product.pricePerKg}/kg`;
@@ -42,9 +42,10 @@ function ProductCard({ product }: { product: MeatType }) {
     return (
         <TouchableOpacity
             activeOpacity={0.88}
-            style={styles.card}
+            style={[styles.gridCard, !isAvailable && styles.gridCardDisabled]}
             onPress={() => router.push(`/product/${product.id}`)}
         >
+            {/* Top Image Container with Cut Badge */}
             <View style={styles.cardImageWrapper}>
                 <Image
                     source={getProductImageSource(product.imageURL)}
@@ -54,23 +55,33 @@ function ProductCard({ product }: { product: MeatType }) {
                 <View style={styles.portionBadge}>
                     <Text style={styles.portionBadgeText}>{portionBadge}</Text>
                 </View>
+                {!isAvailable && (
+                    <View style={styles.unavailableOverlay}>
+                        <Text style={styles.unavailableOverlayText}>Unavailable</Text>
+                    </View>
+                )}
             </View>
 
+            {/* Card Content (Consistent heights across columns) */}
             <View style={styles.cardBody}>
-                <View style={styles.cardTop}>
-                    <Text style={styles.cardName} numberOfLines={1}>{product.name}</Text>
-                    {Boolean(product.localName) && (
-                        <Text style={styles.cardLocal} numberOfLines={1}>{product.localName}</Text>
-                    )}
-                    <Text style={styles.cardDesc} numberOfLines={2}>{product.description}</Text>
+                <View style={styles.cardInfo}>
+                    <Text style={styles.cardName} numberOfLines={1}>
+                        {product.name}
+                    </Text>
+                    <Text style={styles.cardLocal} numberOfLines={1}>
+                        {product.localName || 'Fresh Halal Cut'}
+                    </Text>
+                    <Text style={styles.cardPrice}>
+                        {priceText}
+                    </Text>
                 </View>
 
+                {/* Bottom Action: Full-Width Stepper (Never squeezes price, 100% elder-friendly) */}
                 <View style={styles.cardBottom}>
-                    <Text style={styles.cardPrice}>{priceText}</Text>
-                    {product.isAvailableToday === false ? (
-                        <Badge label="Not Today" variant="error" size="sm" />
+                    {!isAvailable ? (
+                        <Badge label="Sold Out" variant="error" size="sm" />
                     ) : (
-                        <InlineStepper product={product} />
+                        <InlineStepper product={product} fullWidth compact />
                     )}
                 </View>
             </View>
@@ -78,7 +89,7 @@ function ProductCard({ product }: { product: MeatType }) {
     );
 }
 
-// ─── Modern 2-Layer Menu Screen ────────────────────────────
+// ─── Modern 2-Column Menu Screen ───────────────────────────
 export default function MenuScreen() {
     const params = useLocalSearchParams<{ category?: string }>();
     const [selectedFilter, setSelectedFilter] = useState<string>(
@@ -110,7 +121,7 @@ export default function MenuScreen() {
         );
     }, [products, searchQuery]);
 
-    // Grouping into sections
+    // Grouping into sections for 2-column grid
     const sections = useMemo(() => {
         if (activeCategory === 'kadai') {
             return [{ title: 'Kaadai (Farm Quail)', data: filteredProducts }];
@@ -155,7 +166,7 @@ export default function MenuScreen() {
                 </View>
             </View>
 
-            {/* ─── Layer 2: Unified 1-Tap Category & Sub-Cut Filter Bar ─── */}
+            {/* ─── Layer 2: Unified 1-Tap Filter Bar ─── */}
             <View style={styles.filterBarContainer}>
                 <ScrollView
                     horizontal
@@ -180,7 +191,7 @@ export default function MenuScreen() {
                 </ScrollView>
             </View>
 
-            {/* ─── Products List (Starts Immediately Without Header Clutter) ─── */}
+            {/* ─── 2-Column Grid Product Sections ─── */}
             {loading ? (
                 <LoadingSpinner label="Loading fresh cuts..." fullScreen />
             ) : sections.length === 0 || sections.every(s => s.data.length === 0) ? (
@@ -190,22 +201,29 @@ export default function MenuScreen() {
                     <Text style={styles.emptySub}>Try searching for another cut or select "All Cuts".</Text>
                 </View>
             ) : (
-                <SectionList
-                    sections={sections}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => <ProductCard product={item} />}
-                    renderSectionHeader={({ section }) => (
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>{section.title}</Text>
-                            <Text style={styles.sectionCount}>
-                                {section.data.length} cut{section.data.length !== 1 ? 's' : ''}
-                            </Text>
-                        </View>
-                    )}
-                    contentContainerStyle={styles.listContent}
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
-                    stickySectionHeadersEnabled
-                />
+                >
+                    {sections.map((section) => (
+                        <View key={section.title} style={styles.sectionContainer}>
+                            {/* Section Title Header */}
+                            <View style={styles.sectionHeader}>
+                                <Text style={styles.sectionTitle}>{section.title}</Text>
+                                <Text style={styles.sectionCount}>
+                                    {section.data.length} cut{section.data.length !== 1 ? 's' : ''}
+                                </Text>
+                            </View>
+
+                            {/* 2-Column Grid Cards */}
+                            <View style={styles.gridRow}>
+                                {section.data.map((product) => (
+                                    <ProductGridCard key={product.id} product={product} />
+                                ))}
+                            </View>
+                        </View>
+                    ))}
+                </ScrollView>
             )}
         </SafeAreaView>
     );
@@ -274,16 +292,21 @@ const styles = StyleSheet.create({
         fontFamily: FontFamily.bold,
     },
 
-    // Section Header
-    sectionHeader: {
-        backgroundColor: '#FAF7F2',
+    // Scroll & Section Container
+    scrollContent: {
         paddingHorizontal: Spacing.md,
-        paddingVertical: 8,
+        paddingTop: 6,
+        paddingBottom: 95,
+    },
+    sectionContainer: {
+        marginBottom: 16,
+    },
+    sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3EFEA',
+        paddingVertical: 8,
+        marginBottom: 8,
     },
     sectionTitle: {
         fontSize: FontSize.sm + 1,
@@ -297,85 +320,99 @@ const styles = StyleSheet.create({
         fontFamily: FontFamily.regular,
     },
 
-    listContent: {
-        paddingBottom: 85,
-    },
-
-    // Clean Product Card
-    card: {
+    // 2-Column Grid Layout
+    gridRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        rowGap: 12,
+    },
+    gridCard: {
+        width: '48.5%',
         backgroundColor: Colors.white,
-        marginHorizontal: Spacing.md,
-        marginTop: 10,
-        borderRadius: BorderRadius.lg,
+        borderRadius: BorderRadius.lg, // 14px
         borderWidth: 1,
         borderColor: '#F1F5F9',
         overflow: 'hidden',
         ...Shadows.sm,
     },
+    gridCardDisabled: {
+        opacity: 0.72,
+    },
     cardImageWrapper: {
+        width: '100%',
+        height: 118,
         position: 'relative',
+        backgroundColor: '#F8FAFC',
     },
     cardImage: {
-        width: 108,
-        height: 108,
+        width: '100%',
+        height: '100%',
     },
     portionBadge: {
         position: 'absolute',
         bottom: 6,
         left: 6,
         backgroundColor: 'rgba(15, 23, 42, 0.82)',
-        borderRadius: BorderRadius.sm,
+        borderRadius: 4,
         paddingHorizontal: 5,
         paddingVertical: 2,
     },
     portionBadgeText: {
         color: Colors.white,
-        fontSize: 8.5,
+        fontSize: 8,
         fontWeight: FontWeight.semibold,
         fontFamily: FontFamily.semibold,
     },
-    cardBody: {
-        flex: 1,
-        padding: 10,
-        justifyContent: 'space-between',
+    unavailableOverlay: {
+        ...StyleSheet.absoluteFill,
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    cardTop: {
+    unavailableOverlayText: {
+        color: Colors.white,
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    cardBody: {
+        padding: 9,
+        justifyContent: 'space-between',
         flex: 1,
+    },
+    cardInfo: {
+        marginBottom: 6,
     },
     cardName: {
-        fontSize: FontSize.sm + 1,
+        fontSize: 12.5,
         fontWeight: FontWeight.bold,
         fontFamily: FontFamily.bold,
         color: Colors.brand.navy,
+        lineHeight: 16,
     },
     cardLocal: {
-        fontSize: FontSize.xs,
+        fontSize: 10,
         color: Colors.gray[500],
         fontFamily: FontFamily.regular,
-        marginTop: 1,
-    },
-    cardDesc: {
-        fontSize: 10.5,
-        color: Colors.gray[500],
-        fontFamily: FontFamily.regular,
-        marginTop: 3,
-        lineHeight: 14,
+        marginTop: 2,
     },
     cardBottom: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+        marginTop: 8,
+        width: '100%',
         alignItems: 'center',
-        marginTop: 6,
     },
     cardPrice: {
-        fontSize: FontSize.base,
+        fontSize: 14,
         fontWeight: FontWeight.extrabold,
         fontFamily: FontFamily.extrabold,
         color: Colors.brand.crimson,
+        marginTop: 4,
     },
 
-    // Empty state
+    // Empty State
     emptyContainer: {
         alignItems: 'center',
         justifyContent: 'center',
