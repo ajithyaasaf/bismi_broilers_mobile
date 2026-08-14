@@ -1,14 +1,14 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Shadows } from '../../constants/Colors';
 import { useCart } from '../../context/CartContext';
 
 function CartIconWithBadge({ color, count }: { color: string; count: number }) {
     return (
-        <View style={{ width: 26, height: 26 }}>
-            <Ionicons name="cart-outline" size={24} color={color} />
+        <View style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="cart-outline" size={21} color={color} />
             {count > 0 && (
                 <View style={styles.cartBadge}>
                     <Text style={styles.cartBadgeText}>{count > 9 ? '9+' : count}</Text>
@@ -29,15 +29,22 @@ export default function TabLayout() {
                 tabBarStyle: {
                     backgroundColor: Colors.white,
                     borderTopWidth: 1,
-                    borderTopColor: Colors.gray[100],
-                    height: 60,
-                    paddingBottom: 8,
+                    borderTopColor: '#F1F5F9',
+                    height: Platform.OS === 'ios' ? 88 : 70,
                     paddingTop: 6,
+                    paddingBottom: Platform.OS === 'ios' ? 24 : 10,
                     ...Shadows.sm,
                 },
+                tabBarItemStyle: {
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: 2,
+                },
                 tabBarLabelStyle: {
-                    fontSize: FontSize.xs,
+                    fontSize: 10.5,
                     fontWeight: '600',
+                    marginTop: -2,
+                    marginBottom: 2,
                 },
                 headerStyle: { backgroundColor: Colors.brand.crimson },
                 headerTintColor: Colors.white,
@@ -49,7 +56,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Home',
                     headerShown: false,
-                    tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={String(color)} />,
+                    tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={21} color={String(color)} />,
                 }}
             />
             <Tabs.Screen
@@ -57,7 +64,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Menu',
                     headerTitle: 'Our Menu',
-                    tabBarIcon: ({ color }) => <Ionicons name="restaurant-outline" size={22} color={String(color)} />,
+                    tabBarIcon: ({ color }) => <Ionicons name="restaurant-outline" size={21} color={String(color)} />,
                 }}
             />
             <Tabs.Screen
@@ -73,7 +80,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Orders',
                     headerTitle: 'My Orders',
-                    tabBarIcon: ({ color }) => <Ionicons name="receipt-outline" size={22} color={String(color)} />,
+                    tabBarIcon: ({ color }) => <Ionicons name="receipt-outline" size={21} color={String(color)} />,
                 }}
             />
         </Tabs>
