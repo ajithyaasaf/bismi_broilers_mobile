@@ -216,7 +216,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: Colors.brand.cream },
     scroll: { flex: 1 },
-    scrollContent: { flexGrow: 1 },
+    scrollContent: { flexGrow: 1, paddingBottom: 120 },
 
     // Hero
     hero: {

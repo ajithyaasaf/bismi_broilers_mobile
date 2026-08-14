@@ -5,6 +5,7 @@ import {
     StyleSheet,
     TouchableOpacity,
     Animated,
+    Platform,
 } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +36,10 @@ export function FloatingCartBar() {
 
     // Hide on checkout, cart, or order confirmation screens
     const isHiddenRoute = pathname.includes('/cart') || pathname.includes('/checkout') || pathname.includes('/order-confirm');
+    const isTabScreen = !pathname.includes('/product/');
+    const bottomInset = isTabScreen
+        ? (Platform.OS === 'ios' ? 96 : 80)
+        : (Platform.OS === 'ios' ? 34 : 16);
 
     useEffect(() => {
         return () => {
@@ -147,7 +152,7 @@ export function FloatingCartBar() {
     return (
         <Animated.View
             style={[
-                styles.container,
+                styles.container, { bottom: bottomInset },
                 {
                     transform: [{ translateY: translateYExitAnim }],
                     opacity: opacityExitAnim,
