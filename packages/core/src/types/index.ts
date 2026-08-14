@@ -20,6 +20,7 @@ export type SlotKey = '6-8' | '8-10' | '10-12' | '12-2' | '5-7' | '7-8';
 export interface SlotConfig {
   enabled: boolean;
   maxOrders: number;
+  orderCount?: number;
 }
 
 export interface DailySlotControl {

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getAvailableSlots, getTodayDateString } from '@bismi/core';
-import type { SlotAvailabilityResult } from '@bismi/core';
+import type { SlotAvailabilityResult, DeliverySlot } from '@bismi/core';
 
 /**
- * Fetch available delivery slots for a given date.
- * Defaults to today. Auto-falls back to tomorrow if all slots are full.
+ * Fetch rich delivery slots and availability for a specified date (IST).
+ * Defaults to today.
  */
 export function useSlots(date?: string) {
     const [result, setResult] = useState<SlotAvailabilityResult | null>(null);
@@ -13,21 +13,31 @@ export function useSlots(date?: string) {
 
     const targetDate = date ?? getTodayDateString();
 
-    useEffect(() => {
+    const fetchSlots = useCallback(async () => {
         setLoading(true);
         setError(null);
 
-        getAvailableSlots(targetDate)
-            .then((res) => {
-                setResult(res);
-                setLoading(false);
-            })
-            .catch((err: Error) => {
-                console.error('[useSlots]', err);
-                setError(err.message);
-                setLoading(false);
-            });
+        try {
+            const res = await getAvailableSlots(targetDate);
+            setResult(res);
+        } catch (err) {
+            console.error('[useSlots]', err);
+            setError(err instanceof Error ? err.message : 'Failed to fetch slots');
+        } finally {
+            setLoading(false);
+        }
     }, [targetDate]);
 
-    return { result, loading, error };
+    useEffect(() => {
+        fetchSlots();
+    }, [fetchSlots]);
+
+    return {
+        result,
+        slots: result?.slots ?? ([] as DeliverySlot[]),
+        isFullyUnavailable: result?.isFullyUnavailable ?? false,
+        loading,
+        error,
+        refresh: fetchSlots,
+    };
 }

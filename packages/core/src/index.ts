@@ -63,6 +63,7 @@ export type { CartState, CartAction } from './cart/cartReducer';
 export {
     getTodayDateString,
     getTomorrowDateString,
+    formatDatePill,
     getDefaultSlotControl,
     fetchDailySlotControl,
     saveDailySlotControl,
@@ -70,5 +71,12 @@ export {
     getOrderCountsForAllSlots,
     isSlotBlockedByBuffer,
     getAvailableSlots,
+    createOrderWithSlotValidation,
+    releaseSlotCapacity,
 } from './slotControl';
-export type { AvailableSlot, SlotAvailabilityResult } from './slotControl';
+export type {
+    DeliverySlot,
+    SlotStatus,
+    SlotAvailabilityResult,
+    DeliverySelection,
+} from './slotControl';

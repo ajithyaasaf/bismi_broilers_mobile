@@ -16,12 +16,6 @@ import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-ico
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 import {
-    collection,
-    addDoc,
-    serverTimestamp,
-} from 'firebase/firestore';
-import {
-    db,
     DELIVERY_ZONES,
     DeliveryType,
     OrderStatus,
@@ -32,8 +26,11 @@ import {
     buildUpiDeepLink,
     computeDeliveryCharge,
     getTodayDateString,
+    getTomorrowDateString,
+    formatDatePill,
+    createOrderWithSlotValidation,
 } from '@bismi/core';
-import type { CartItem, AvailableSlot } from '@bismi/core';
+import type { CartItem, DeliverySlot } from '@bismi/core';
 import { useCart } from '../context/CartContext';
 import { useCustomer } from '../context/CustomerContext';
 import { useSlots } from '../hooks/useSlots';
@@ -44,66 +41,148 @@ import { Colors, FontSize, FontWeight, FontFamily, Spacing, BorderRadius } from 
 
 // ─── Delivery Slot Picker Component ───────────────────────
 function SlotPicker({
+    selectedDate,
     selectedKey,
+    onDateChange,
     onSelect,
 }: {
+    selectedDate: string;
     selectedKey: string;
+    onDateChange: (dateStr: string) => void;
     onSelect: (key: string, label: string) => void;
 }) {
-    const { result, loading } = useSlots();
+    const todayStr = getTodayDateString();
+    const tomorrowStr = getTomorrowDateString();
 
-    if (loading) return <LoadingSpinner label="Checking slot availability..." size="small" />;
-    if (!result || result.slots.length === 0) {
-        return (
-            <View style={styles.emptySlotContainer}>
-                <Ionicons name="alert-circle-outline" size={20} color={Colors.warning} />
-                <Text style={styles.noSlotsText}>No slots available for today. Tomorrow's slots opening soon.</Text>
-            </View>
-        );
-    }
+    const { slots, isFullyUnavailable, loading } = useSlots(selectedDate);
+    const isToday = selectedDate === todayStr;
 
-    const isTomorrow = !result.isToday;
+    // Smart fallback: If today is fully unavailable and user is on today, auto-switch to tomorrow
+    useEffect(() => {
+        if (isToday && isFullyUnavailable && !loading) {
+            onDateChange(tomorrowStr);
+        }
+    }, [isToday, isFullyUnavailable, loading, onDateChange, tomorrowStr]);
 
     return (
         <View style={styles.slotContainer}>
             <View style={styles.slotHeaderRow}>
-                <Text style={styles.slotHeaderLabel}>Preferred Delivery Time Slot</Text>
-                {isTomorrow && (
-                    <View style={styles.tomorrowBadge}>
-                        <Text style={styles.tomorrowBadgeText}>TOMORROW</Text>
-                    </View>
-                )}
+                <Text style={styles.slotHeaderLabel}>Preferred Delivery Schedule</Text>
             </View>
 
-            <View style={styles.slotsGrid}>
-                {result.slots.map((slot: AvailableSlot) => {
-                    const isSelected = selectedKey === slot.key;
-                    const isFull = slot.orderCount >= slot.maxOrders;
-                    return (
-                        <TouchableOpacity
-                            key={slot.key}
-                            activeOpacity={0.7}
-                            style={[
-                                styles.slotChip,
-                                isSelected && styles.slotChipActive,
-                                isFull && styles.slotChipFull,
-                            ]}
-                            onPress={() => {
-                                if (!isFull) {
-                                    Haptics.selectionAsync();
-                                    onSelect(slot.key, slot.label);
-                                }
-                            }}
-                            disabled={isFull}
-                        >
-                            <Text style={[styles.slotChipText, isSelected && styles.slotChipTextActive]}>
-                                {slot.label}
-                            </Text>
-                            {isFull && <Text style={styles.slotFullText}>Full</Text>}
-                        </TouchableOpacity>
-                    );
-                })}
+            {/* 2-Pill Date Tab Switcher */}
+            <View style={styles.dateTabsContainer}>
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={[
+                        styles.dateTabPill,
+                        isToday && styles.dateTabPillActive,
+                        isToday && isFullyUnavailable && styles.dateTabPillDisabled,
+                    ]}
+                    onPress={() => {
+                        Haptics.selectionAsync();
+                        onDateChange(todayStr);
+                    }}
+                >
+                    <Ionicons
+                        name="calendar-outline"
+                        size={14}
+                        color={isToday ? Colors.brand.crimson : Colors.gray[600]}
+                    />
+                    <Text style={[styles.dateTabPillText, isToday && styles.dateTabPillTextActive]}>
+                        Today, {formatDatePill(todayStr)}
+                    </Text>
+                    {isToday && isFullyUnavailable && (
+                        <View style={styles.dateFullBadge}>
+                            <Text style={styles.dateFullBadgeText}>Full</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={[
+                        styles.dateTabPill,
+                        !isToday && styles.dateTabPillActive,
+                    ]}
+                    onPress={() => {
+                        Haptics.selectionAsync();
+                        onDateChange(tomorrowStr);
+                    }}
+                >
+                    <Ionicons
+                        name="calendar-outline"
+                        size={14}
+                        color={!isToday ? Colors.brand.crimson : Colors.gray[600]}
+                    />
+                    <Text style={[styles.dateTabPillText, !isToday && styles.dateTabPillTextActive]}>
+                        Tomorrow, {formatDatePill(tomorrowStr)}
+                    </Text>
+                    {!isToday && (
+                        <View style={styles.tomorrowActiveBadge}>
+                            <Text style={styles.tomorrowActiveBadgeText}>Fresh Batch</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
             </View>
+
+            {/* Slot Grid */}
+            {loading ? (
+                <LoadingSpinner label="Checking slot capacity..." size="small" />
+            ) : slots.length === 0 ? (
+                <View style={styles.emptySlotContainer}>
+                    <Ionicons name="alert-circle-outline" size={20} color={Colors.warning} />
+                    <Text style={styles.noSlotsText}>No delivery slots configured for this date.</Text>
+                </View>
+            ) : (
+                <View style={styles.slotsGrid}>
+                    {slots.map((slot: DeliverySlot) => {
+                        const isSelected = selectedKey === slot.key;
+                        const isClickable = slot.isAvailable;
+
+                        return (
+                            <TouchableOpacity
+                                key={slot.key}
+                                activeOpacity={0.7}
+                                style={[
+                                    styles.slotChip,
+                                    isSelected && styles.slotChipActive,
+                                    slot.status === 'PASSED' && styles.slotChipPassed,
+                                    slot.status === 'FULL' && styles.slotChipFull,
+                                    slot.status === 'ALMOST_FULL' && styles.slotChipAlmostFull,
+                                ]}
+                                onPress={() => {
+                                    if (isClickable) {
+                                        Haptics.selectionAsync();
+                                        onSelect(slot.key, slot.label);
+                                    }
+                                }}
+                                disabled={!isClickable}
+                            >
+                                <Text
+                                    style={[
+                                        styles.slotChipText,
+                                        isSelected && styles.slotChipTextActive,
+                                        !isClickable && styles.slotChipTextDisabled,
+                                    ]}
+                                >
+                                    {slot.label}
+                                </Text>
+
+                                {slot.status === 'PASSED' && (
+                                    <Text style={styles.slotPassedText}>Closed</Text>
+                                )}
+                                {slot.status === 'FULL' && (
+                                    <Text style={styles.slotFullText}>Full</Text>
+                                )}
+                                {slot.status === 'ALMOST_FULL' && (
+                                    <Text style={styles.slotAlmostFullText}>🔥 Only 1 left</Text>
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            )}
         </View>
     );
 }
@@ -112,7 +191,6 @@ function SlotPicker({
 export default function CheckoutScreen() {
     const { items, subtotal, clearCart } = useCart();
     const { customer, saveCustomer } = useCustomer();
-    const { result: slotResult } = useSlots();
 
     // ─── Form State ─────────────────────────────────────────
     const [name, setName] = useState(customer?.name ?? '');
@@ -124,6 +202,7 @@ export default function CheckoutScreen() {
     const [isZoneDropdownOpen, setIsZoneDropdownOpen] = useState(false);
 
     const [address, setAddress] = useState(customer?.address ?? '');
+    const [selectedDeliveryDate, setSelectedDeliveryDate] = useState<string>(() => getTodayDateString());
     const [selectedSlotKey, setSelectedSlotKey] = useState('');
     const [selectedSlotLabel, setSelectedSlotLabel] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod'>('upi');
@@ -138,14 +217,6 @@ export default function CheckoutScreen() {
     const totalAmount = subtotal + deliveryCharge;
     const isMinOrderMet = subtotal >= SHOP_CONFIG.minimumOrderAmount;
     const minOrderDiff = SHOP_CONFIG.minimumOrderAmount - subtotal;
-
-    // Auto-select first slot when slots load
-    useEffect(() => {
-        if (slotResult?.slots && slotResult.slots.length > 0 && !selectedSlotKey) {
-            setSelectedSlotKey(slotResult.slots[0].key);
-            setSelectedSlotLabel(slotResult.slots[0].label);
-        }
-    }, [slotResult, selectedSlotKey]);
 
     // Copy UPI ID to clipboard
     const handleCopyUpi = () => {
@@ -233,9 +304,7 @@ export default function CheckoutScreen() {
                 };
             });
 
-            const todayStr = slotResult?.date ?? getTodayDateString();
-
-            const orderRef = await addDoc(collection(db, 'orders'), {
+            const orderPayload: Record<string, unknown> = {
                 customerName: name.trim(),
                 mobile: mobile.trim(),
                 items: orderItems,
@@ -246,30 +315,53 @@ export default function CheckoutScreen() {
                 address: deliveryType === DeliveryType.DELIVERY ? address.trim() : 'Pickup from shop',
                 deliveryZone: selectedZone || null,
                 deliveryZoneLabel: zoneObj?.label ?? selectedZone ?? null,
-                deliverySlot: selectedSlotKey || null,
-                deliveryTimeSlot: selectedSlotLabel || null,
-                deliveryDate: todayStr,
+                deliverySlot: deliveryType === DeliveryType.DELIVERY ? selectedSlotKey : null,
+                deliveryTimeSlot: deliveryType === DeliveryType.DELIVERY ? selectedSlotLabel : null,
+                deliveryDate: deliveryType === DeliveryType.DELIVERY ? selectedDeliveryDate : getTodayDateString(),
                 paymentMethod: paymentMethod === 'upi' ? 'UPI (Paytm/GPay)' : 'Cash on Delivery',
                 status: OrderStatus.PENDING,
                 idempotencyToken,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-            });
+            };
+
+            const { orderId } = await createOrderWithSlotValidation(
+                orderPayload,
+                deliveryType === DeliveryType.DELIVERY ? selectedSlotKey : null,
+                selectedDeliveryDate,
+                idempotencyToken
+            );
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
             if (paymentMethod === 'upi') {
-                await handleUpiPay(orderRef.id);
+                await handleUpiPay(orderId);
             }
 
             clearCart();
-            router.replace(`/order-confirm/${orderRef.id}`);
-        } catch (err) {
+            router.replace(`/order-confirm/${orderId}`);
+        } catch (err: unknown) {
             console.error('[Checkout] Order submission failed:', err);
-            Alert.alert(
-                'Order Placement Error',
-                'We could not place your order right now. Please check your internet connection and try again.'
-            );
+            const msg = err instanceof Error ? err.message : '';
+            if (msg === 'SLOT_CAPACITY_EXCEEDED') {
+                Alert.alert(
+                    'Time Slot Full',
+                    'This delivery time slot reached full capacity while checking out. Please select another slot or choose Tomorrow.'
+                );
+            } else if (msg === 'SLOT_PASSED') {
+                Alert.alert(
+                    'Time Slot Closed',
+                    'This delivery window has passed for today. Please select an upcoming slot or choose Tomorrow.'
+                );
+            } else if (msg === 'SHOP_CLOSED') {
+                Alert.alert(
+                    'Shop Closed Today',
+                    'Our shop is closed for deliveries today. Please choose Tomorrow to pre-book your order.'
+                );
+            } else {
+                Alert.alert(
+                    'Order Placement Error',
+                    'We could not place your order right now. Please check your internet connection and try again.'
+                );
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -496,7 +588,13 @@ export default function CheckoutScreen() {
                 {deliveryType === DeliveryType.DELIVERY && (
                     <Card style={styles.cardSection}>
                         <SlotPicker
+                            selectedDate={selectedDeliveryDate}
                             selectedKey={selectedSlotKey}
+                            onDateChange={(newDate) => {
+                                setSelectedDeliveryDate(newDate);
+                                setSelectedSlotKey('');
+                                setSelectedSlotLabel('');
+                            }}
                             onSelect={(key, label) => {
                                 setSelectedSlotKey(key);
                                 setSelectedSlotLabel(label);
@@ -938,6 +1036,81 @@ const styles = StyleSheet.create({
     },
 
     // Slot Picker
+    slotContainer: {
+        gap: Spacing.sm,
+    },
+    slotHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    slotHeaderLabel: {
+        fontSize: FontSize.sm,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+        color: Colors.brand.navy,
+    },
+
+    // 2-Pill Date Tabs
+    dateTabsContainer: {
+        flexDirection: 'row',
+        gap: Spacing.sm,
+    },
+    dateTabPill: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: Spacing.sm,
+        borderRadius: BorderRadius.md,
+        backgroundColor: Colors.gray[50],
+        borderWidth: 1.5,
+        borderColor: Colors.gray[200],
+        gap: 6,
+    },
+    dateTabPillActive: {
+        borderColor: Colors.brand.crimson,
+        backgroundColor: '#FFF0F0',
+    },
+    dateTabPillDisabled: {
+        opacity: 0.6,
+    },
+    dateTabPillText: {
+        fontSize: FontSize.xs,
+        fontWeight: FontWeight.semibold,
+        fontFamily: FontFamily.semibold,
+        color: Colors.gray[700],
+    },
+    dateTabPillTextActive: {
+        color: Colors.brand.crimson,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+    },
+    dateFullBadge: {
+        backgroundColor: '#FEE2E2',
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        borderRadius: BorderRadius.full,
+    },
+    dateFullBadgeText: {
+        fontSize: 9,
+        fontWeight: FontWeight.bold,
+        color: '#DC2626',
+    },
+    tomorrowActiveBadge: {
+        backgroundColor: '#E0F2FE',
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        borderRadius: BorderRadius.full,
+    },
+    tomorrowActiveBadgeText: {
+        fontSize: 9,
+        fontWeight: FontWeight.bold,
+        color: '#0369A1',
+    },
+
+    // Slots Grid
     emptySlotContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -951,31 +1124,6 @@ const styles = StyleSheet.create({
         color: '#92400E',
         fontWeight: FontWeight.medium,
     },
-    slotContainer: {
-        gap: Spacing.xs,
-    },
-    slotHeaderRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    slotHeaderLabel: {
-        fontSize: FontSize.sm,
-        fontWeight: FontWeight.bold,
-        color: Colors.brand.navy,
-    },
-    tomorrowBadge: {
-        backgroundColor: '#E0F2FE',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: BorderRadius.full,
-    },
-    tomorrowBadgeText: {
-        fontSize: 9,
-        fontWeight: FontWeight.bold,
-        color: '#0369A1',
-    },
     slotsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -983,19 +1131,32 @@ const styles = StyleSheet.create({
     },
     slotChip: {
         paddingVertical: 8,
-        paddingHorizontal: Spacing.sm,
+        paddingHorizontal: Spacing.sm + 2,
         borderRadius: BorderRadius.md,
         backgroundColor: Colors.gray[50],
         borderWidth: 1.5,
         borderColor: Colors.gray[200],
         alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 110,
     },
     slotChipActive: {
         borderColor: Colors.brand.crimson,
         backgroundColor: '#FFF0F0',
     },
+    slotChipPassed: {
+        opacity: 0.45,
+        backgroundColor: Colors.gray[100],
+        borderColor: Colors.gray[200],
+    },
     slotChipFull: {
-        opacity: 0.4,
+        opacity: 0.5,
+        backgroundColor: '#FEF2F2',
+        borderColor: '#FECACA',
+    },
+    slotChipAlmostFull: {
+        borderColor: '#FDBA74',
+        backgroundColor: '#FFF7ED',
     },
     slotChipText: {
         fontSize: FontSize.xs,
@@ -1006,9 +1167,24 @@ const styles = StyleSheet.create({
         color: Colors.brand.crimson,
         fontWeight: FontWeight.bold,
     },
+    slotChipTextDisabled: {
+        color: Colors.gray[400],
+    },
+    slotPassedText: {
+        fontSize: 9,
+        color: Colors.gray[500],
+        fontWeight: FontWeight.bold,
+        marginTop: 2,
+    },
     slotFullText: {
         fontSize: 9,
         color: Colors.error,
+        fontWeight: FontWeight.bold,
+        marginTop: 2,
+    },
+    slotAlmostFullText: {
+        fontSize: 9,
+        color: '#EA580C',
         fontWeight: FontWeight.bold,
         marginTop: 2,
     },
