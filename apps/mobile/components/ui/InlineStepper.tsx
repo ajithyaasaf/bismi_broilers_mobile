@@ -14,11 +14,6 @@ interface InlineStepperProps {
 const STEP = 0.25;
 const MIN_KG = 0.5;
 
-/**
- * Zepto / Swiggy Instamart style Morphing Inline Quantity Stepper.
- * - Inactive state: High-contrast "+ ADD" button.
- * - Active state: Morphs inline to "−  0.5 kg  +" stepper with haptic feedback.
- */
 export function InlineStepper({ product, compact = false }: InlineStepperProps) {
     const { items, addItem, updateQuantity, removeItem } = useCart();
 
@@ -71,7 +66,7 @@ export function InlineStepper({ product, compact = false }: InlineStepperProps) 
         }
     };
 
-    // If NOT in cart -> render "+ ADD"
+    // Inactive state: Large, bold "+ ADD" button
     if (!cartItem || currentQty === 0) {
         return (
             <TouchableOpacity
@@ -79,34 +74,43 @@ export function InlineStepper({ product, compact = false }: InlineStepperProps) 
                 style={[styles.addBtn, compact && styles.addBtnCompact]}
                 onPress={handleAddInitial}
             >
-                <Ionicons name="add" size={compact ? 12 : 14} color={Colors.white} />
+                <Ionicons name="add" size={compact ? 14 : 16} color={Colors.white} />
                 <Text style={[styles.addBtnText, compact && styles.addBtnTextCompact]}>ADD</Text>
             </TouchableOpacity>
         );
     }
 
-    // If IN cart -> render Morphed Inline Stepper: "−  0.5 kg  +"
+    // Active state: Large, accessible stepper with clear bold numbers
     const qtyLabel = isPerPiece ? `${currentQty} pc` : `${currentQty} kg`;
 
     return (
         <View style={[styles.stepperContainer, compact && styles.stepperCompact]}>
-            <TouchableOpacity style={styles.stepperBtn} onPress={handleDecrement} activeOpacity={0.7}>
-                <Ionicons name="remove" size={compact ? 12 : 14} color={Colors.white} />
+            <TouchableOpacity
+                style={[styles.stepperBtn, compact && styles.stepperBtnCompact]}
+                onPress={handleDecrement}
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+            >
+                <Ionicons name="remove" size={compact ? 15 : 18} color={Colors.white} />
             </TouchableOpacity>
             <View style={styles.stepperQtyBox}>
                 <Text style={[styles.stepperQtyText, compact && styles.stepperQtyTextCompact]}>
                     {qtyLabel}
                 </Text>
             </View>
-            <TouchableOpacity style={styles.stepperBtn} onPress={handleIncrement} activeOpacity={0.7}>
-                <Ionicons name="add" size={compact ? 12 : 14} color={Colors.white} />
+            <TouchableOpacity
+                style={[styles.stepperBtn, compact && styles.stepperBtnCompact]}
+                onPress={handleIncrement}
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+            >
+                <Ionicons name="add" size={compact ? 15 : 18} color={Colors.white} />
             </TouchableOpacity>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    // Add button: Solid Crimson background + crisp White bold text + subtle elevation
     addBtn: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -115,60 +119,64 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.md,
         paddingHorizontal: Spacing.sm + 4,
         paddingVertical: 6,
-        minWidth: 68,
-        gap: 2,
-        shadowColor: Colors.brand.crimson,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3,
-        elevation: 3,
+        minWidth: 70,
+        gap: 3,
     },
     addBtnCompact: {
-        paddingHorizontal: Spacing.xs + 4,
-        paddingVertical: 4,
-        minWidth: 58,
+        paddingHorizontal: 8,
+        paddingVertical: 5,
+        minWidth: 64,
     },
     addBtnText: {
         color: Colors.white,
-        fontSize: FontSize.xs,
+        fontSize: FontSize.sm,
         fontWeight: FontWeight.bold,
         letterSpacing: 0.5,
     },
     addBtnTextCompact: {
-        fontSize: 10,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
     },
 
-    // Morphed Stepper
+    // Large, accessible Stepper (+ / −)
     stepperContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: Colors.brand.crimson,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: 2,
-        paddingVertical: 2,
-        minWidth: 78,
+        borderRadius: BorderRadius.md,
+        paddingHorizontal: 4,
+        paddingVertical: 3,
+        minWidth: 84,
+        flexShrink: 0,
     },
     stepperCompact: {
-        minWidth: 68,
+        minWidth: 76,
+        paddingHorizontal: 3,
+        paddingVertical: 3,
     },
     stepperBtn: {
-        paddingHorizontal: 5,
-        paddingVertical: 3,
+        paddingHorizontal: 6,
+        paddingVertical: 4,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    stepperBtnCompact: {
+        paddingHorizontal: 4,
+        paddingVertical: 3,
     },
     stepperQtyBox: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 2,
+        paddingHorizontal: 3,
     },
     stepperQtyText: {
         color: Colors.white,
-        fontSize: 11,
-        fontWeight: FontWeight.bold,
+        fontSize: 12,
+        fontWeight: FontWeight.extrabold,
     },
     stepperQtyTextCompact: {
-        fontSize: 10,
+        fontSize: 11,
+        fontWeight: FontWeight.extrabold,
     },
 });
