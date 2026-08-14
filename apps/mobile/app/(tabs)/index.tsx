@@ -60,6 +60,7 @@ function TodayAvailableStrip() {
 import { getProductImageSource } from '../../utils/imageResolver';
 
 import { InlineStepper } from '../../components/ui/InlineStepper';
+import { SwiggyAnimatedHero } from '../../components/SwiggyAnimatedHero';
 
 // ─── Best Seller Card ─────────────────────────────────────
 function BestSellerCard({ product }: { product: MeatType }) {
@@ -134,29 +135,8 @@ export default function HomeScreen() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Hero Banner with Web Scooter Delivery Asset */}
-                <View style={styles.hero}>
-                    <View style={styles.heroContent}>
-                        <View style={styles.freeBadge}>
-                            <Ionicons name="flash-outline" size={12} color={Colors.brand.crimson} />
-                            <Text style={styles.freeBadgeText}>FREE DELIVERY</Text>
-                        </View>
-                        <Text style={styles.heroTitle}>Fresh Meat{'\n'}at Your Door</Text>
-                        <Text style={styles.heroSubtitle}>
-                            Freshly cut daily in Mudukulattur.{'\n'}Fastest delivery guaranteed.
-                        </Text>
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            onPress={() => router.push('/(tabs)/menu')}
-                            style={styles.heroBtn}
-                            rightIcon={<Ionicons name="arrow-forward" size={16} color={Colors.white} />}
-                        >
-                            Order Now
-                        </Button>
-                    </View>
-                    <Image source={SCOOTER_IMAGE} style={styles.scooterImage} resizeMode="contain" />
-                </View>
+                {/* ─── Swiggy / Zomato Dynamic Animated Hero Carousel ─── */}
+                <SwiggyAnimatedHero />
 
                 {/* Today Available Strip */}
                 <TodayAvailableStrip />
