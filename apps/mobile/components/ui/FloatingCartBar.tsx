@@ -5,9 +5,6 @@ import {
     StyleSheet,
     TouchableOpacity,
     Animated,
-    LayoutAnimation,
-    Platform,
-    UIManager,
 } from 'react-native';
 import { router, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,16 +13,12 @@ import { useCart } from '../../context/CartContext';
 import { formatCurrency } from '@bismi/core';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadows } from '../../constants/Colors';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
 /**
- * Swiggy / Zomato style Floating Cart Bar with Right-to-Left Sliding "Close" Pill.
- * - Left side (Items + Price) always stays steady.
- * - Tapping [ ✕ ] on the right smoothly slides/morphs that right button area into a [ ✕ Close ] pill.
- * - Tapping [ ✕ Close ] clears the cart and smoothly drops the bar out of view.
- * - Auto-reverts back to [ View Cart → ] after 3.5s if not clicked.
+ * Modern Swiggy / Zomato style Floating Cart Bar with Sliding "Close" Pill.
+ * - Left side (Items + Price) stays rock steady.
+ * - "View Cart →" text is strictly kept in a single line with ample width.
+ * - Tapping [ ✕ ] smoothly slides the red "Close" capsule pill from right to left.
+ * - Tapping [ ✕ Close ] clears the cart and smoothly exits the dock.
  */
 export function FloatingCartBar() {
     const { itemCount, subtotal, clearCart } = useCart();
@@ -33,9 +26,12 @@ export function FloatingCartBar() {
     const [isCloseActive, setIsCloseActive] = useState(false);
     const autoResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Slide down exit animation
-    const translateYAnim = useRef(new Animated.Value(0)).current;
-    const opacityAnim = useRef(new Animated.Value(1)).current;
+    // Spring slider animation (0 = normal View Cart, 1 = Close capsule expanded)
+    const slideAnim = useRef(new Animated.Value(0)).current;
+
+    // Dropdown exit animation for whole bar
+    const translateYExitAnim = useRef(new Animated.Value(0)).current;
+    const opacityExitAnim = useRef(new Animated.Value(1)).current;
 
     // Hide on checkout, cart, or order confirmation screens
     const isHiddenRoute = pathname.includes('/cart') || pathname.includes('/checkout') || pathname.includes('/order-confirm');
@@ -48,6 +44,7 @@ export function FloatingCartBar() {
 
     useEffect(() => {
         if (itemCount === 0) {
+            slideAnim.setValue(0);
             setIsCloseActive(false);
             if (autoResetTimerRef.current) clearTimeout(autoResetTimerRef.current);
         }
@@ -56,62 +53,110 @@ export function FloatingCartBar() {
     if (itemCount === 0 || isHiddenRoute) return null;
 
     const handleViewCartPress = async () => {
+        if (isCloseActive) return;
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         router.push('/(tabs)/cart');
     };
 
-    // Step 1: User taps the ✕ cross icon -> Right side smoothly expands to [ ✕ Close ]
+    // Step 1: User taps the ✕ cross icon -> Spring slide from right to left
     const handleCrossTap = async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setIsCloseActive(true);
 
-        // Auto-collapse back to View Cart after 3.5s
+        Animated.spring(slideAnim, {
+            toValue: 1,
+            useNativeDriver: false,
+            bounciness: 4,
+            speed: 15,
+        }).start();
+
+        // Auto-revert back after 3.5s
         if (autoResetTimerRef.current) clearTimeout(autoResetTimerRef.current);
         autoResetTimerRef.current = setTimeout(() => {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            setIsCloseActive(false);
+            revertCloseState();
         }, 3500);
     };
 
-    // Step 2: User taps the revealed [ ✕ Close ] button -> Clears cart and animates away
+    const revertCloseState = () => {
+        Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: false,
+            bounciness: 2,
+            speed: 16,
+        }).start(() => {
+            setIsCloseActive(false);
+        });
+    };
+
+    // Step 2: User taps the revealed [ ✕ Close ] pill -> Clears cart and animates away
     const handleCloseConfirmTap = async () => {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         if (autoResetTimerRef.current) clearTimeout(autoResetTimerRef.current);
 
-        // Smooth exit slide down
         Animated.parallel([
-            Animated.timing(translateYAnim, {
+            Animated.timing(translateYExitAnim, {
                 toValue: 60,
                 duration: 220,
                 useNativeDriver: true,
             }),
-            Animated.timing(opacityAnim, {
+            Animated.timing(opacityExitAnim, {
                 toValue: 0,
                 duration: 200,
                 useNativeDriver: true,
             }),
         ]).start(() => {
             clearCart();
+            slideAnim.setValue(0);
             setIsCloseActive(false);
-            translateYAnim.setValue(0);
-            opacityAnim.setValue(1);
+            translateYExitAnim.setValue(0);
+            opacityExitAnim.setValue(1);
         });
     };
+
+    // Animated Interpolations
+    const viewCartOpacity = slideAnim.interpolate({
+        inputRange: [0, 0.4, 1],
+        outputRange: [1, 0, 0],
+    });
+
+    const viewCartTranslateX = slideAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, -12],
+    });
+
+    const pillWidth = slideAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [30, 80],
+    });
+
+    const pillBgColor = slideAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['rgba(255, 255, 255, 0.12)', '#DC2626'],
+    });
+
+    const closeTextOpacity = slideAnim.interpolate({
+        inputRange: [0, 0.5, 1],
+        outputRange: [0, 0, 1],
+    });
+
+    const closeTextTranslateX = slideAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [10, 0],
+    });
 
     return (
         <Animated.View
             style={[
                 styles.container,
                 {
-                    transform: [{ translateY: translateYAnim }],
-                    opacity: opacityAnim,
+                    transform: [{ translateY: translateYExitAnim }],
+                    opacity: opacityExitAnim,
                 },
             ]}
             pointerEvents="box-none"
         >
             <View style={styles.bar}>
-                {/* Left: Cart Icon, Items & Total (Stays steady) */}
+                {/* Left: Cart Icon, Items & Total */}
                 <TouchableOpacity
                     activeOpacity={0.88}
                     style={styles.leftInfo}
@@ -124,47 +169,75 @@ export function FloatingCartBar() {
                         </View>
                     </View>
                     <View style={styles.textColumn}>
-                        <Text style={styles.itemCountText}>
+                        <Text style={styles.itemCountText} numberOfLines={1}>
                             {itemCount} item{itemCount !== 1 ? 's' : ''} added
                         </Text>
-                        <Text style={styles.totalText}>{formatCurrency(subtotal)}</Text>
+                        <Text style={styles.totalText} numberOfLines={1}>
+                            {formatCurrency(subtotal)}
+                        </Text>
                     </View>
                 </TouchableOpacity>
 
-                {/* Right: Morphing Button Container (Right-to-Left Slide Animation) */}
+                {/* Right: Dynamic Action Area */}
                 <View style={styles.rightContainer}>
-                    {!isCloseActive ? (
-                        // Normal State: [ View Cart → ] + [ ✕ ]
-                        <View style={styles.normalButtonGroup}>
-                            <TouchableOpacity
-                                activeOpacity={0.88}
-                                style={styles.viewCartButton}
-                                onPress={handleViewCartPress}
-                            >
-                                <Text style={styles.viewCartText}>View Cart</Text>
-                                <Ionicons name="arrow-forward" size={13} color={Colors.white} />
-                            </TouchableOpacity>
+                    {/* View Cart Button (Strict Single Line) */}
+                    <Animated.View
+                        style={[
+                            styles.viewCartWrapper,
+                            {
+                                opacity: viewCartOpacity,
+                                transform: [{ translateX: viewCartTranslateX }],
+                            },
+                        ]}
+                        pointerEvents={isCloseActive ? 'none' : 'auto'}
+                    >
+                        <TouchableOpacity
+                            activeOpacity={0.88}
+                            style={styles.viewCartButton}
+                            onPress={handleViewCartPress}
+                        >
+                            <Text style={styles.viewCartText} numberOfLines={1}>View Cart</Text>
+                            <Ionicons name="arrow-forward" size={13} color={Colors.white} />
+                        </TouchableOpacity>
+                    </Animated.View>
 
-                            <TouchableOpacity
-                                activeOpacity={0.7}
-                                style={styles.crossCircleButton}
-                                onPress={handleCrossTap}
-                                hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
-                            >
-                                <Ionicons name="close" size={16} color="#94A3B8" />
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        // Active Step 1: Smoothly Slid [ ✕ Close ] Action Pill
+                    {/* Sliding Close Capsule Pill */}
+                    <Animated.View
+                        style={[
+                            styles.slidingCapsule,
+                            {
+                                width: pillWidth,
+                                backgroundColor: pillBgColor,
+                            },
+                        ]}
+                    >
                         <TouchableOpacity
                             activeOpacity={0.85}
-                            style={styles.expandedCloseButton}
-                            onPress={handleCloseConfirmTap}
+                            style={styles.slidingCapsuleTouchable}
+                            onPress={isCloseActive ? handleCloseConfirmTap : handleCrossTap}
+                            hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
                         >
-                            <Ionicons name="close" size={15} color={Colors.white} />
-                            <Text style={styles.expandedCloseText}>Close</Text>
+                            <Ionicons
+                                name="close"
+                                size={isCloseActive ? 15 : 16}
+                                color={isCloseActive ? Colors.white : '#94A3B8'}
+                            />
+                            {isCloseActive && (
+                                <Animated.Text
+                                    numberOfLines={1}
+                                    style={[
+                                        styles.slidingCloseText,
+                                        {
+                                            opacity: closeTextOpacity,
+                                            transform: [{ translateX: closeTextTranslateX }],
+                                        },
+                                    ]}
+                                >
+                                    Close
+                                </Animated.Text>
+                            )}
                         </TouchableOpacity>
-                    )}
+                    </Animated.View>
                 </View>
             </View>
         </Animated.View>
@@ -174,7 +247,7 @@ export function FloatingCartBar() {
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: 65, // Positioned right above the bottom tab bar
+        bottom: 65,
         left: Spacing.md,
         right: Spacing.md,
         zIndex: 999,
@@ -197,12 +270,13 @@ const styles = StyleSheet.create({
         minHeight: 56,
     },
 
-    // Left info (Always steady)
+    // Left info
     leftInfo: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 9,
         flex: 1,
+        marginRight: 6,
     },
     cartIconCircle: {
         width: 35,
@@ -234,6 +308,7 @@ const styles = StyleSheet.create({
     },
     textColumn: {
         justifyContent: 'center',
+        flexShrink: 1,
     },
     itemCountText: {
         color: '#94A3B8',
@@ -247,25 +322,31 @@ const styles = StyleSheet.create({
         letterSpacing: -0.2,
     },
 
-    // Right Morphing Area
+    // Right Action Container
     rightContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-end',
+        position: 'relative',
+        height: 36,
+        minWidth: 130, // Guarantees ample single-line width for View Cart
     },
-    normalButtonGroup: {
+    viewCartWrapper: {
+        position: 'absolute',
+        right: 36,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
     },
     viewCartButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 4,
         backgroundColor: Colors.brand.crimson,
-        paddingHorizontal: 13,
-        paddingVertical: 7.5,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
         borderRadius: BorderRadius.full,
+        flexShrink: 0,
         ...Shadows.sm,
     },
     viewCartText: {
@@ -273,29 +354,27 @@ const styles = StyleSheet.create({
         fontSize: FontSize.xs + 0.5,
         fontWeight: FontWeight.bold,
         letterSpacing: 0.2,
-    },
-    crossCircleButton: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexShrink: 0,
     },
 
-    // Right-to-Left Expanded [ ✕ Close ] Pill
-    expandedCloseButton: {
+    // Sliding Capsule
+    slidingCapsule: {
+        height: 30,
+        borderRadius: BorderRadius.full,
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    slidingCapsuleTouchable: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+        paddingHorizontal: 8,
         gap: 4,
-        backgroundColor: '#DC2626', // Vibrant Red
-        paddingHorizontal: 16,
-        paddingVertical: 7.5,
-        borderRadius: BorderRadius.full,
-        ...Shadows.sm,
     },
-    expandedCloseText: {
+    slidingCloseText: {
         color: Colors.white,
         fontSize: FontSize.xs + 0.5,
         fontWeight: FontWeight.bold,
