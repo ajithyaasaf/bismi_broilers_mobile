@@ -14,11 +14,11 @@ import { formatCurrency } from '@bismi/core';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadows } from '../../constants/Colors';
 
 /**
- * Modern Swiggy / Zomato style Floating Cart Bar with Sliding "Close" Pill.
- * - Left side (Items + Price) stays rock steady.
- * - "View Cart →" text is strictly kept in a single line with ample width.
- * - Tapping [ ✕ ] smoothly slides the red "Close" capsule pill from right to left.
- * - Tapping [ ✕ Close ] clears the cart and smoothly exits the dock.
+ * [ COLOR COMBO 2 ]
+ * Deep Navy (#1E293B) Base + Vibrant Crimson (#C81E1E) CTA Button.
+ * - Sits on Bismi's classic slate navy foundation.
+ * - Crimson CTA button provides a high-converting focal point.
+ * - Smooth spring-sliding [ ✕ Close ] capsule on the right.
  */
 export function FloatingCartBar() {
     const { itemCount, subtotal, clearCart } = useCart();
@@ -29,7 +29,7 @@ export function FloatingCartBar() {
     // Spring slider animation (0 = normal View Cart, 1 = Close capsule expanded)
     const slideAnim = useRef(new Animated.Value(0)).current;
 
-    // Dropdown exit animation for whole bar
+    // Exit slide-down animation for whole bar
     const translateYExitAnim = useRef(new Animated.Value(0)).current;
     const opacityExitAnim = useRef(new Animated.Value(1)).current;
 
@@ -180,7 +180,7 @@ export function FloatingCartBar() {
 
                 {/* Right: Dynamic Action Area */}
                 <View style={styles.rightContainer}>
-                    {/* View Cart Button (Strict Single Line) */}
+                    {/* View Cart Button (Solid Crimson Pill + Crisp White Text) */}
                     <Animated.View
                         style={[
                             styles.viewCartWrapper,
@@ -252,19 +252,20 @@ const styles = StyleSheet.create({
         right: Spacing.md,
         zIndex: 999,
     },
+    // [ COLOR COMBO 2 ]: Deep Navy Base
     bar: {
-        backgroundColor: '#0F172A', // Midnight Slate
+        backgroundColor: Colors.brand.navy, // #1E293B Deep Slate Navy
         borderRadius: BorderRadius.xl,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.12)',
+        borderColor: 'rgba(255, 255, 255, 0.14)',
         paddingHorizontal: 12,
         paddingVertical: 9,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        shadowColor: '#000',
+        shadowColor: Colors.brand.navy,
         shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.28,
+        shadowOpacity: 0.32,
         shadowRadius: 10,
         elevation: 10,
         minHeight: 56,
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 3,
         borderWidth: 1.5,
-        borderColor: '#0F172A',
+        borderColor: Colors.brand.navy,
     },
     badgeDotText: {
         color: Colors.white,
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
         flexShrink: 1,
     },
     itemCountText: {
-        color: '#94A3B8',
+        color: '#94A3B8', // Cool slate gray
         fontSize: 10.5,
         fontWeight: FontWeight.medium,
     },
@@ -329,7 +330,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         position: 'relative',
         height: 36,
-        minWidth: 130, // Guarantees ample single-line width for View Cart
+        minWidth: 130,
     },
     viewCartWrapper: {
         position: 'absolute',
@@ -337,12 +338,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
+    // [ COLOR COMBO 2 ]: Vibrant Crimson Pill + Crisp White Text
     viewCartButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 4,
-        backgroundColor: Colors.brand.crimson,
+        backgroundColor: Colors.brand.crimson, // #C81E1E Vibrant Crimson
         paddingHorizontal: 12,
         paddingVertical: 7,
         borderRadius: BorderRadius.full,
