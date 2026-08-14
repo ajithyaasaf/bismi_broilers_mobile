@@ -61,6 +61,7 @@ import { getProductImageSource } from '../../utils/imageResolver';
 
 import { InlineStepper } from '../../components/ui/InlineStepper';
 import { SwiggyAnimatedHero } from '../../components/SwiggyAnimatedHero';
+import { MyntraStickyHeader, MyntraCategoryStories } from '../../components/MyntraTopHeader';
 
 // ─── Best Seller Card ─────────────────────────────────────
 function BestSellerCard({ product }: { product: MeatType }) {
@@ -129,12 +130,17 @@ export default function HomeScreen() {
     const { products: bestSellers, loading: bsLoading } = useBestSellers();
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+            {/* ─── Pinned Sticky Header (Location + Search + Bell/Heart/Cart) ─── */}
+            <MyntraStickyHeader />
+
             <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+                {/* ─── Scrollable Category Tabs & Story Avatars ─── */}
+                <MyntraCategoryStories />
                 {/* ─── Swiggy / Zomato Dynamic Animated Hero Carousel ─── */}
                 <SwiggyAnimatedHero />
 
