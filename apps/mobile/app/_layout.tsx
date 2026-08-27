@@ -56,7 +56,7 @@ export default function RootLayout() {
             <SafeAreaProvider>
                 <CustomerProvider>
                     <CartProvider>
-                        <StatusBar style="light" />
+                        <StatusBar style="dark" />
                         <Stack
                             screenOptions={{
                                 headerStyle: { backgroundColor: Colors.brand.crimson },
