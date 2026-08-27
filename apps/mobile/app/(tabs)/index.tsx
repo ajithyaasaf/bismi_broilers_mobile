@@ -20,7 +20,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { SHOP_CONFIG, CATEGORIES, formatCurrency } from '@bismi/core';
 import type { MeatType } from '@bismi/core';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadows } from '../../constants/Colors';
+import { Colors, FontSize, FontWeight, FontFamily, Spacing, BorderRadius, Shadows } from '../../constants/Colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -65,6 +65,10 @@ import { MyntraStickyHeader, MyntraCategoryStories } from '../../components/Mynt
 
 // ─── Best Seller Card ─────────────────────────────────────
 function BestSellerCard({ product }: { product: MeatType }) {
+    const isAvailable = product.isAvailableToday !== false;
+    const priceText = product.unit === 'piece'
+        ? `₹${product.pricePerPiece ?? 0}/pc`
+        : `₹${product.pricePerKg}/kg`;
     const portionBadge = product.unit === 'piece' ? 'Per Piece' : 'Cleaned & Cut';
 
     return (
@@ -85,19 +89,21 @@ function BestSellerCard({ product }: { product: MeatType }) {
             </View>
 
             <View style={styles.bestSellerInfo}>
-                <View>
+                <View style={styles.cardInfo}>
                     <Text style={styles.bestSellerName} numberOfLines={1}>{product.name}</Text>
-                    {product.localName && (
-                        <Text style={styles.bestSellerLocal} numberOfLines={1}>{product.localName}</Text>
-                    )}
-                </View>
-                <View style={styles.priceRow}>
-                    <Text style={styles.bestSellerPrice}>
-                        {product.unit === 'piece'
-                            ? `${formatCurrency(product.pricePerPiece ?? 0)}/pc`
-                            : `${formatCurrency(product.pricePerKg)}/kg`}
+                    <Text style={styles.bestSellerLocal} numberOfLines={1}>
+                        {product.localName || 'Fresh Halal Cut'}
                     </Text>
-                    <InlineStepper product={product} compact />
+                    <Text style={styles.bestSellerPrice}>
+                        {priceText}
+                    </Text>
+                </View>
+                <View style={styles.cardBottom}>
+                    {!isAvailable ? (
+                        <Badge label="Sold Out" variant="error" size="sm" />
+                    ) : (
+                        <InlineStepper product={product} fullWidth compact />
+                    )}
                 </View>
             </View>
         </TouchableOpacity>
@@ -320,11 +326,30 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
     },
     portionBadgeText: { color: Colors.white, fontSize: 9, fontWeight: FontWeight.semibold },
-    bestSellerInfo: { padding: 10, gap: 6 },
+    bestSellerInfo: {
+        padding: 9,
+        justifyContent: 'space-between',
+        flex: 1,
+        minHeight: 100,
+    },
     bestSellerName: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Colors.brand.navy },
     bestSellerLocal: { fontSize: 10, color: Colors.gray[500], marginTop: 1 },
     priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, gap: 4 },
-    bestSellerPrice: { fontSize: FontSize.xs, fontWeight: FontWeight.extrabold, color: Colors.brand.crimson },
+    bestSellerPrice: {
+        fontSize: 13.5,
+        fontWeight: FontWeight.extrabold,
+        fontFamily: FontFamily.extrabold,
+        color: Colors.brand.crimson,
+        marginTop: 4,
+    },
+    cardInfo: {
+        marginBottom: 4,
+    },
+    cardBottom: {
+        marginTop: 6,
+        width: '100%',
+        alignItems: 'center',
+    },
 
     // Info card
     infoCard: { marginHorizontal: Spacing.md },
