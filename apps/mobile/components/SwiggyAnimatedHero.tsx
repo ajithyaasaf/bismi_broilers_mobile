@@ -1,20 +1,24 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    TouchableOpacity,
     Image,
+    Dimensions,
+    FlatList,
+    NativeSyntheticEvent,
+    NativeScrollEvent,
+    TouchableOpacity,
     Animated,
-    PanResponder,
 } from 'react-native';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../constants/Colors';
 import { Button } from './ui/Button';
+import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadows } from '../constants/Colors';
 
-const SLIDE_DURATION = 4500;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const AUTO_PLAY_INTERVAL = 4500;
 
 interface SlideItem {
     id: number;
@@ -56,19 +60,25 @@ const SLIDES: SlideItem[] = [
     },
 ];
 
+/**
+ * Full-Width Native Banner Carousel:
+ * - 100% Full-Width (SCREEN_WIDTH) with luxury curved bottom dock.
+ * - Native FlatList with pagingEnabled for buttery-smooth, frictionless 60-120fps sliding.
+ * - Continuous floating bob animation on all 3 distinct 3D PNG cutouts.
+ * - Auto-scroll with smart touch-interaction pause.
+ */
 export function SwiggyAnimatedHero() {
     const [activeIndex, setActiveIndex] = useState(0);
-
-    const fadeAnim = useRef(new Animated.Value(1)).current;
+    const flatListRef = useRef<FlatList>(null);
+    const isInteracting = useRef(false);
     const floatAnim = useRef(new Animated.Value(0)).current;
-    const progressAnim = useRef(new Animated.Value(0)).current;
 
-    // Continuous floating bob on PNG cutout
+    // Continuous floating bob micro-animation on PNG cutouts
     useEffect(() => {
         const floatLoop = Animated.loop(
             Animated.sequence([
                 Animated.timing(floatAnim, {
-                    toValue: -5,
+                    toValue: -6,
                     duration: 1600,
                     useNativeDriver: true,
                 }),
@@ -83,94 +93,77 @@ export function SwiggyAnimatedHero() {
         return () => floatLoop.stop();
     }, [floatAnim]);
 
-    const changeSlide = useCallback((newIndex: number) => {
-        Animated.timing(fadeAnim, {
-            toValue: 0.2,
-            duration: 140,
-            useNativeDriver: true,
-        }).start(() => {
-            setActiveIndex(newIndex);
-            progressAnim.setValue(0);
-            Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 220,
-                useNativeDriver: true,
-            }).start();
-        });
-    }, [fadeAnim, progressAnim]);
-
-    const nextSlide = useCallback(() => {
-        changeSlide((activeIndex + 1) % SLIDES.length);
-    }, [activeIndex, changeSlide]);
-
-    const prevSlide = useCallback(() => {
-        changeSlide((activeIndex - 1 + SLIDES.length) % SLIDES.length);
-    }, [activeIndex, changeSlide]);
-
-    // Auto-advance timer with smooth progress bar
+    // Auto-advance slider
     useEffect(() => {
-        progressAnim.setValue(0);
-        const anim = Animated.timing(progressAnim, {
-            toValue: 1,
-            duration: SLIDE_DURATION,
-            useNativeDriver: false,
-        });
-
-        anim.start(({ finished }) => {
-            if (finished) {
-                nextSlide();
+        const timer = setInterval(() => {
+            if (!isInteracting.current && flatListRef.current) {
+                const nextIndex = (activeIndex + 1) % SLIDES.length;
+                flatListRef.current.scrollToIndex({
+                    index: nextIndex,
+                    animated: true,
+                });
+                setActiveIndex(nextIndex);
             }
+        }, AUTO_PLAY_INTERVAL);
+
+        return () => clearInterval(timer);
+    }, [activeIndex]);
+
+    const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const scrollOffset = event.nativeEvent.contentOffset.x;
+        const index = Math.round(scrollOffset / SCREEN_WIDTH);
+        if (index >= 0 && index < SLIDES.length && index !== activeIndex) {
+            setActiveIndex(index);
+        }
+    }, [activeIndex]);
+
+    const handleScrollBegin = () => {
+        isInteracting.current = true;
+    };
+
+    const handleScrollEnd = () => {
+        setTimeout(() => {
+            isInteracting.current = false;
+        }, 1500);
+    };
+
+    const scrollToSlide = (index: number) => {
+        Haptics.selectionAsync();
+        setActiveIndex(index);
+        flatListRef.current?.scrollToIndex({
+            index,
+            animated: true,
         });
+    };
 
-        return () => anim.stop();
-    }, [activeIndex, nextSlide, progressAnim]);
-
-    // Touch swipe responder
-    const panResponder = useRef(
-        PanResponder.create({
-            onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 20,
-            onPanResponderRelease: (_, gesture) => {
-                if (gesture.dx < -35) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    nextSlide();
-                } else if (gesture.dx > 35) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    prevSlide();
-                }
-            },
-        })
-    ).current;
-
-    const current = SLIDES[activeIndex];
-
-    return (
-        <View style={styles.hero} {...panResponder.panHandlers}>
-            <Animated.View style={[styles.heroRow, { opacity: fadeAnim }]}>
+    const renderSlide = ({ item }: { item: SlideItem }) => (
+        <View style={styles.slidePage}>
+            <View style={styles.heroRow}>
                 {/* Left Side: Badge, Title, Subtitle, CTA */}
                 <View style={styles.heroContent}>
                     <View style={styles.freeBadge}>
-                        <Ionicons name={current.badgeIcon} size={12} color={Colors.brand.crimson} />
-                        <Text style={styles.freeBadgeText}>{current.badgeText}</Text>
+                        <Ionicons name={item.badgeIcon} size={11} color={Colors.brand.crimson} />
+                        <Text style={styles.freeBadgeText}>{item.badgeText}</Text>
                     </View>
 
-                    <Text style={styles.heroTitle}>{current.title}</Text>
+                    <Text style={styles.heroTitle}>{item.title}</Text>
 
                     <Text style={styles.heroSubtitle}>
-                        {current.subtitle}
+                        {item.subtitle}
                     </Text>
 
                     <Button
                         variant="primary"
-                        size="md"
+                        size="sm"
                         onPress={() => router.push('/(tabs)/menu')}
                         style={styles.heroBtn}
-                        rightIcon={<Ionicons name="arrow-forward" size={15} color={Colors.white} />}
+                        rightIcon={<Ionicons name="arrow-forward" size={14} color={Colors.white} />}
                     >
-                        {current.btnText}
+                        {item.btnText}
                     </Button>
                 </View>
 
-                {/* Right Side: Animated Floating Cutout Image */}
+                {/* Right Side: Animated Floating 3D PNG Cutout */}
                 <Animated.View
                     style={[
                         styles.imageWrapper,
@@ -178,48 +171,51 @@ export function SwiggyAnimatedHero() {
                     ]}
                 >
                     <Image
-                        key={current.id}
-                        source={current.image}
+                        source={item.image}
                         style={styles.heroImage}
                         resizeMode="contain"
                     />
                 </Animated.View>
-            </Animated.View>
+            </View>
+        </View>
+    );
 
-            {/* Segmented Progress Indicators */}
+    return (
+        <View style={styles.hero}>
+            <FlatList
+                ref={flatListRef}
+                data={SLIDES}
+                keyExtractor={(item) => String(item.id)}
+                renderItem={renderSlide}
+                horizontal
+                pagingEnabled={true}
+                decelerationRate="fast"
+                showsHorizontalScrollIndicator={false}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                onScrollBeginDrag={handleScrollBegin}
+                onMomentumScrollEnd={handleScrollEnd}
+                getItemLayout={(_, index) => ({
+                    length: SCREEN_WIDTH,
+                    offset: SCREEN_WIDTH * index,
+                    index,
+                })}
+            />
+
+            {/* Pagination Indicators */}
             <View style={styles.indicatorsRow}>
                 {SLIDES.map((slide, idx) => {
                     const isActive = idx === activeIndex;
-                    const isPast = idx < activeIndex;
-
-                    const widthInterpolated = isActive
-                        ? progressAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [6, 22],
-                        })
-                        : isPast
-                        ? 22
-                        : 6;
-
                     return (
                         <TouchableOpacity
                             key={slide.id}
-                            activeOpacity={0.8}
-                            onPress={() => {
-                                Haptics.selectionAsync();
-                                changeSlide(idx);
-                            }}
+                            onPress={() => scrollToSlide(idx)}
                             hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
                         >
-                            <Animated.View
+                            <View
                                 style={[
                                     styles.indicatorDot,
-                                    {
-                                        width: widthInterpolated,
-                                        backgroundColor: isActive || isPast
-                                            ? Colors.white
-                                            : 'rgba(255, 255, 255, 0.35)',
-                                    },
+                                    isActive && styles.indicatorDotActive,
                                 ]}
                             />
                         </TouchableOpacity>
@@ -232,13 +228,17 @@ export function SwiggyAnimatedHero() {
 
 const styles = StyleSheet.create({
     hero: {
+        width: SCREEN_WIDTH,
         backgroundColor: Colors.brand.crimson,
-        paddingHorizontal: Spacing.md,
-        paddingTop: Spacing.lg,
+        paddingTop: Spacing.md,
         paddingBottom: Spacing.md,
-        borderBottomLeftRadius: BorderRadius.xl,
+        borderBottomLeftRadius: BorderRadius.xl, // 20px
         borderBottomRightRadius: BorderRadius.xl,
         overflow: 'hidden',
+    },
+    slidePage: {
+        width: SCREEN_WIDTH,
+        paddingHorizontal: Spacing.md,
     },
     heroRow: {
         flexDirection: 'row',
@@ -255,23 +255,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: Colors.white,
         borderRadius: BorderRadius.full,
-        paddingHorizontal: Spacing.sm,
+        paddingHorizontal: 8,
         paddingVertical: 3,
         alignSelf: 'flex-start',
         gap: 4,
         marginBottom: Spacing.xs,
     },
     freeBadgeText: {
-        fontSize: 10,
+        fontSize: 9.5,
         fontWeight: FontWeight.bold,
         color: Colors.brand.crimson,
         letterSpacing: 0.3,
     },
     heroTitle: {
-        fontSize: FontSize['2xl'],
+        fontSize: FontSize['2xl'] - 2, // 22px
         fontWeight: FontWeight.extrabold,
         color: Colors.white,
-        lineHeight: 28,
+        lineHeight: 26,
         marginVertical: Spacing.xs,
     },
     heroSubtitle: {
@@ -298,10 +298,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
-        marginTop: Spacing.sm,
+        marginTop: Spacing.xs,
     },
     indicatorDot: {
-        height: 3.5,
+        width: 6,
+        height: 4,
         borderRadius: 2,
+        backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    },
+    indicatorDotActive: {
+        width: 22,
+        backgroundColor: Colors.white,
     },
 });
