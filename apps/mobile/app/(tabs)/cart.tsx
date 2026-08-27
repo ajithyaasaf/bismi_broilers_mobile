@@ -5,20 +5,23 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
+    Image,
     Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useCart } from '../../context/CartContext';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { formatCurrency, SHOP_CONFIG } from '@bismi/core';
 import type { CartItem } from '@bismi/core';
-import { Colors, FontSize, FontWeight, Spacing, BorderRadius } from '../../constants/Colors';
+import { Colors, FontSize, FontWeight, FontFamily, Spacing, BorderRadius, Shadows } from '../../constants/Colors';
+import { getProductImageSource } from '../../utils/imageResolver';
 
-// ─── Cart Item Row ────────────────────────────────────────
+// ─── Modern Cart Item Row with Food Image ──────────────────
 function CartItemRow({ item, onIncrease, onDecrease, onRemove }: {
     item: CartItem;
     onIncrease: () => void;
@@ -31,45 +34,85 @@ function CartItemRow({ item, onIncrease, onDecrease, onRemove }: {
         ? qty * (item.pricePerPiece ?? 0)
         : qty * (item.pricePerKg ?? 0);
 
-    return (
-        <Card style={styles.itemCard} elevation="sm">
-            <View style={styles.itemRow}>
-                <View style={styles.itemInfo}>
-                    <Text style={styles.itemName}>{item.meatName}</Text>
-                    {item.cuttingPreference && (
-                        <Text style={styles.itemCut}>{item.cuttingPreference}</Text>
-                    )}
-                    <Text style={styles.itemPrice}>{formatCurrency(price)}</Text>
-                </View>
+    const imageSource = getProductImageSource(item.imageURL, item.meatName);
 
-                <View style={styles.itemControls}>
-                    <TouchableOpacity style={styles.qtyBtn} onPress={onDecrease} activeOpacity={0.8}>
-                        <Ionicons name="remove" size={16} color={Colors.white} />
-                    </TouchableOpacity>
-                    <View style={styles.qtyDisplay}>
-                        <Text style={styles.qtyText}>{qty} {unitLabel}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.qtyBtn} onPress={onIncrease} activeOpacity={0.8}>
-                        <Ionicons name="add" size={16} color={Colors.white} />
-                    </TouchableOpacity>
-                </View>
+    return (
+        <View style={styles.itemCard}>
+            {/* 1. Food Cut Thumbnail */}
+            <View style={styles.imageWrapper}>
+                <Image
+                    source={imageSource}
+                    style={styles.itemImage}
+                    resizeMode="cover"
+                />
             </View>
 
-            <TouchableOpacity style={styles.removeBtn} onPress={onRemove} activeOpacity={0.7}>
-                <Ionicons name="trash-outline" size={14} color={Colors.gray[400]} />
-                <Text style={styles.removeBtnText}>Remove</Text>
-            </TouchableOpacity>
-        </Card>
+            {/* 2. Item Info */}
+            <View style={styles.itemInfo}>
+                <Text style={styles.itemName} numberOfLines={1}>
+                    {item.meatName}
+                </Text>
+                {Boolean(item.cuttingPreference) && (
+                    <Text style={styles.itemCut} numberOfLines={1}>
+                        {item.cuttingPreference}
+                    </Text>
+                )}
+                <Text style={styles.itemPrice}>
+                    {formatCurrency(price)}
+                </Text>
+            </View>
+
+            {/* 3. Stepper Controls & Delete */}
+            <View style={styles.controlsCol}>
+                <View style={styles.stepperContainer}>
+                    <TouchableOpacity
+                        style={styles.stepperBtn}
+                        onPress={onDecrease}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                    >
+                        <Ionicons name="remove" size={14} color={Colors.white} />
+                    </TouchableOpacity>
+
+                    <View style={styles.qtyBox}>
+                        <Text style={styles.qtyText} numberOfLines={1}>
+                            {qty} {unitLabel}
+                        </Text>
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.stepperBtn}
+                        onPress={onIncrease}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                    >
+                        <Ionicons name="add" size={14} color={Colors.white} />
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                    style={styles.removeBtn}
+                    onPress={onRemove}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                    <Ionicons name="trash-outline" size={14} color={Colors.gray[400]} />
+                    <Text style={styles.removeBtnText}>Remove</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
     );
 }
 
-// ─── Empty Cart ───────────────────────────────────────────
+// ─── Empty Cart Screen ───────────────────────────────────
 function EmptyCart() {
     return (
         <View style={styles.emptyContainer}>
-            <Ionicons name="cart-outline" size={64} color={Colors.gray[300]} />
+            <View style={styles.emptyIconCircle}>
+                <Ionicons name="cart-outline" size={48} color={Colors.brand.crimson} />
+            </View>
             <Text style={styles.emptyTitle}>Your Cart is Empty</Text>
-            <Text style={styles.emptySubtitle}>Explore our fresh cuts and add your items here!</Text>
+            <Text style={styles.emptySubtitle}>Explore our fresh cuts and add tender meats to your cart!</Text>
             <Button
                 variant="primary"
                 onPress={() => router.push('/(tabs)/menu')}
@@ -89,11 +132,13 @@ export default function CartScreen() {
     const STEP = 0.25;
 
     const handleIncrease = (item: CartItem) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         const qty = item.unit === 'piece' ? (item.pieces ?? 0) : (item.kg ?? 0);
         updateQuantity(item.meatTypeId, item.unit === 'kg' ? qty + STEP : qty + 1);
     };
 
     const handleDecrease = (item: CartItem) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         const qty = item.unit === 'piece' ? (item.pieces ?? 0) : (item.kg ?? 0);
         const minQty = item.unit === 'kg' ? 0.5 : 1;
         if (qty <= minQty) {
@@ -104,7 +149,7 @@ export default function CartScreen() {
     };
 
     const handleClear = () => {
-        Alert.alert('Clear Cart', 'Remove all items from cart?', [
+        Alert.alert('Clear Cart', 'Remove all items from your cart?', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Clear', style: 'destructive', onPress: clearCart },
         ]);
@@ -126,31 +171,36 @@ export default function CartScreen() {
                         item={item}
                         onIncrease={() => handleIncrease(item)}
                         onDecrease={() => handleDecrease(item)}
-                        onRemove={() => removeItem(item.meatTypeId)}
+                        onRemove={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            removeItem(item.meatTypeId);
+                        }}
                     />
                 )}
                 ListHeaderComponent={
                     <View style={styles.listHeader}>
-                        <Text style={styles.listHeaderText}>{itemCount} item{itemCount !== 1 ? 's' : ''} in cart</Text>
-                        <TouchableOpacity onPress={handleClear}>
+                        <Text style={styles.listHeaderText}>
+                            {itemCount} item{itemCount !== 1 ? 's' : ''} in cart
+                        </Text>
+                        <TouchableOpacity onPress={handleClear} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                             <Text style={styles.clearText}>Clear All</Text>
                         </TouchableOpacity>
                     </View>
                 }
                 ListFooterComponent={
-                    <Card style={styles.summaryCard} elevation="md">
+                    <View style={styles.summaryCard}>
                         <Text style={styles.summaryTitle}>Order Summary</Text>
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Subtotal</Text>
                             <Text style={styles.summaryValue}>{formatCurrency(subtotal)}</Text>
                         </View>
                         <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Delivery Charge</Text>
+                            <Text style={styles.summaryLabel}>Delivery Fee</Text>
                             <Badge label="FREE DELIVERY" variant="success" size="sm" />
                         </View>
                         <View style={styles.summaryDivider} />
                         <View style={styles.summaryRow}>
-                            <Text style={styles.summaryTotal}>Total Amount</Text>
+                            <Text style={styles.summaryTotal}>Total to Pay</Text>
                             <Text style={styles.summaryTotalValue}>{formatCurrency(subtotal)}</Text>
                         </View>
 
@@ -158,7 +208,7 @@ export default function CartScreen() {
                             <View style={styles.minOrderBanner}>
                                 <Ionicons name="alert-circle" size={16} color="#92400e" style={{ marginRight: 6 }} />
                                 <Text style={styles.minOrderText}>
-                                    Minimum order is {formatCurrency(SHOP_CONFIG.minimumOrderAmount)}. Add {formatCurrency(SHOP_CONFIG.minimumOrderAmount - subtotal)} more.
+                                    Minimum order is {formatCurrency(SHOP_CONFIG.minimumOrderAmount)}. Add {formatCurrency(SHOP_CONFIG.minimumOrderAmount - subtotal)} more to proceed.
                                 </Text>
                             </View>
                         )}
@@ -174,7 +224,7 @@ export default function CartScreen() {
                         >
                             Proceed to Checkout
                         </Button>
-                    </Card>
+                    </View>
                 }
             />
         </SafeAreaView>
@@ -182,57 +232,217 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: Colors.brand.cream },
-    listContent: { padding: Spacing.md, gap: Spacing.sm },
+    safeArea: { flex: 1, backgroundColor: '#FAF7F2' },
+    listContent: { padding: Spacing.md, gap: 10, paddingBottom: 40 },
 
-    listHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.sm },
-    listHeaderText: { fontSize: FontSize.xs, color: Colors.gray[500] },
-    clearText: { fontSize: FontSize.xs, color: Colors.brand.crimson, fontWeight: FontWeight.semibold },
+    listHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 6,
+        paddingHorizontal: 2,
+    },
+    listHeaderText: {
+        fontSize: FontSize.xs + 0.5,
+        color: Colors.gray[600],
+        fontWeight: FontWeight.semibold,
+        fontFamily: FontFamily.semibold,
+    },
+    clearText: {
+        fontSize: FontSize.xs,
+        color: Colors.brand.crimson,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+    },
 
-    // Item card
-    itemCard: { marginBottom: 0 },
-    itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    itemInfo: { flex: 1, marginRight: Spacing.md },
-    itemName: { fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: Colors.brand.navy },
-    itemCut: { fontSize: FontSize.xs, color: Colors.gray[500], marginTop: 2 },
-    itemPrice: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.brand.crimson, marginTop: 4 },
+    // Cart Item Card with Food Image
+    itemCard: {
+        flexDirection: 'row',
+        backgroundColor: Colors.white,
+        borderRadius: BorderRadius.lg, // 14px
+        padding: 10,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        ...Shadows.sm,
+    },
+    imageWrapper: {
+        width: 68,
+        height: 68,
+        borderRadius: BorderRadius.md,
+        overflow: 'hidden',
+        backgroundColor: '#F8FAFC',
+        marginRight: 10,
+    },
+    itemImage: {
+        width: '100%',
+        height: '100%',
+    },
+    itemInfo: {
+        flex: 1,
+        justifyContent: 'center',
+        marginRight: 8,
+    },
+    itemName: {
+        fontSize: FontSize.sm + 0.5,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+        color: Colors.brand.navy,
+    },
+    itemCut: {
+        fontSize: 10.5,
+        color: Colors.gray[500],
+        fontFamily: FontFamily.regular,
+        marginTop: 2,
+    },
+    itemPrice: {
+        fontSize: FontSize.base,
+        fontWeight: FontWeight.extrabold,
+        fontFamily: FontFamily.extrabold,
+        color: Colors.brand.crimson,
+        marginTop: 4,
+    },
 
-    itemControls: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-    qtyBtn: {
-        width: 32,
-        height: 32,
-        borderRadius: BorderRadius.full,
+    // Controls
+    controlsCol: {
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        gap: 6,
+    },
+    stepperContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: Colors.brand.crimson,
+        borderRadius: BorderRadius.md,
+        paddingHorizontal: 2,
+        paddingVertical: 2,
+        minWidth: 78,
+    },
+    stepperBtn: {
+        paddingHorizontal: 6,
+        paddingVertical: 4,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    qtyDisplay: { minWidth: 56, alignItems: 'center' },
-    qtyText: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.brand.navy },
+    qtyBox: {
+        paddingHorizontal: 4,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    qtyText: {
+        fontSize: 11,
+        fontWeight: FontWeight.extrabold,
+        fontFamily: FontFamily.bold,
+        color: Colors.white,
+    },
+    removeBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
+        paddingTop: 2,
+    },
+    removeBtnText: {
+        fontSize: 10,
+        color: Colors.gray[400],
+        fontFamily: FontFamily.medium,
+    },
 
-    removeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: Spacing.sm, alignSelf: 'flex-start' },
-    removeBtnText: { fontSize: FontSize.xs, color: Colors.gray[400] },
-
-    // Summary
-    summaryCard: { marginTop: Spacing.md },
-    summaryTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.brand.navy, marginBottom: Spacing.md },
-    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm },
-    summaryLabel: { fontSize: FontSize.sm, color: Colors.gray[600] },
-    summaryValue: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold, color: Colors.brand.navy },
-    summaryDivider: { height: 1, backgroundColor: Colors.gray[200], marginVertical: Spacing.sm },
-    summaryTotal: { fontSize: FontSize.base, fontWeight: FontWeight.bold, color: Colors.brand.navy },
-    summaryTotalValue: { fontSize: FontSize.xl, fontWeight: FontWeight.extrabold, color: Colors.brand.crimson },
+    // Summary Card
+    summaryCard: {
+        backgroundColor: Colors.white,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.md,
+        marginTop: 10,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        ...Shadows.sm,
+    },
+    summaryTitle: {
+        fontSize: FontSize.base,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+        color: Colors.brand.navy,
+        marginBottom: Spacing.md,
+    },
+    summaryRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.sm,
+    },
+    summaryLabel: {
+        fontSize: FontSize.sm,
+        color: Colors.gray[600],
+        fontFamily: FontFamily.medium,
+        flexShrink: 0,
+        paddingRight: 6,
+    },
+    summaryValue: {
+        fontSize: FontSize.sm,
+        fontWeight: FontWeight.semibold,
+        fontFamily: FontFamily.semibold,
+        color: Colors.brand.navy,
+    },
+    summaryDivider: {
+        height: 1,
+        backgroundColor: '#F1F5F9',
+        marginVertical: Spacing.sm,
+    },
+    summaryTotal: {
+        fontSize: FontSize.base,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+        color: Colors.brand.navy,
+    },
+    summaryTotalValue: {
+        fontSize: FontSize.xl,
+        fontWeight: FontWeight.extrabold,
+        fontFamily: FontFamily.extrabold,
+        color: Colors.brand.crimson,
+    },
     minOrderBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fef3c7',
-        borderRadius: BorderRadius.sm,
+        backgroundColor: '#FEF3C7',
+        borderRadius: BorderRadius.md,
         padding: Spacing.sm,
         marginTop: Spacing.sm,
     },
-    minOrderText: { flex: 1, fontSize: FontSize.xs, color: '#92400e' },
+    minOrderText: {
+        flex: 1,
+        fontSize: FontSize.xs,
+        color: '#92400e',
+        fontFamily: FontFamily.medium,
+    },
 
-    // Empty
-    emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing['2xl'] },
-    emptyTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: Colors.brand.navy, marginTop: Spacing.md },
-    emptySubtitle: { fontSize: FontSize.sm, color: Colors.gray[500], marginTop: Spacing.xs, textAlign: 'center' },
+    // Empty State
+    emptyContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: Spacing['2xl'],
+        backgroundColor: '#FAF7F2',
+    },
+    emptyIconCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#FEE2E2',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: Spacing.md,
+    },
+    emptyTitle: {
+        fontSize: FontSize.xl,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+        color: Colors.brand.navy,
+    },
+    emptySubtitle: {
+        fontSize: FontSize.sm,
+        color: Colors.gray[500],
+        marginTop: Spacing.xs,
+        textAlign: 'center',
+        fontFamily: FontFamily.regular,
+    },
 });
