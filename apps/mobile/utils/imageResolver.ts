@@ -1,39 +1,40 @@
 import { ImageSourcePropType } from 'react-native';
+import { CloudinaryImages } from '../constants/CloudinaryImages';
 
-const FALLBACK_IMAGE = require('../assets/images/Product images/chicken/Curry Cuts.png');
+const FALLBACK_IMAGE: ImageSourcePropType = { uri: CloudinaryImages.curryCuts };
 
 const PRODUCT_IMAGE_MAP: Record<string, ImageSourcePropType> = {
-    '/assets/images/Product images/chicken/Chicken Breasts.png': require('../assets/images/Product images/chicken/Chicken Breasts.png'),
-    '/assets/images/Product images/chicken/Curry Cuts.png': require('../assets/images/Product images/chicken/Curry Cuts.png'),
-    '/assets/images/Product images/chicken/Leg piece.png': require('../assets/images/Product images/chicken/Leg piece.png'),
-    '/assets/images/Product images/chicken/Chicken Wings.png': require('../assets/images/Product images/chicken/Chicken Wings.png'),
-    '/assets/images/Product images/Quail/quail.webp': require('../assets/images/Product images/Quail/quail.webp'),
-    '/assets/images/Product images/chicken/chicken boneless.png': require('../assets/images/Product images/chicken/chicken boneless.png'),
-    '/assets/images/Product images/chicken/Briyani cut.webp': require('../assets/images/Product images/chicken/Briyani cut.webp'),
-    '/assets/images/Product images/chicken/Chicken curry cut small pieces.png': require('../assets/images/Product images/chicken/Chicken curry cut small pieces.png'),
-    '/assets/images/Product images/chicken/chicken curry cuts large pieces.png': require('../assets/images/Product images/chicken/chicken curry cuts large pieces.png'),
-    '/assets/images/Product images/chicken/Boneless Cubes.png': require('../assets/images/Product images/chicken/Boneless Cubes.png'),
-    '/assets/images/Product images/chicken/country chicken.png': require('../assets/images/Product images/chicken/country chicken.png'),
-    '/assets/images/Product images/chicken/Drumsticks.png': require('../assets/images/Product images/chicken/Drumsticks.png'),
-    '/assets/images/Product images/chicken/Gravy cut.webp': require('../assets/images/Product images/chicken/Gravy cut.webp'),
-    '/assets/images/Product images/chicken/chicken keema.png': require('../assets/images/Product images/chicken/chicken keema.png'),
-    '/assets/images/Product images/chicken/chicken lollipop.png': require('../assets/images/Product images/chicken/chicken lollipop.png'),
-    '/assets/images/Product images/chicken/quail egg.png': require('../assets/images/Product images/chicken/quail egg.png'),
-    '/assets/images/Product images/chicken/Raw Whole Chicken.png': require('../assets/images/Product images/chicken/Raw Whole Chicken.png'),
-    '/assets/images/Product images/chicken/white egg.png': require('../assets/images/Product images/chicken/white egg.png'),
-    '/assets/images/Category images/chicken.avif': require('../assets/images/Category images/chicken.avif'),
-    '/assets/images/Category images/quail.png': require('../assets/images/Category images/quail.png'),
+    '/assets/images/Product images/chicken/Chicken Breasts.png': { uri: CloudinaryImages.chickenBreasts },
+    '/assets/images/Product images/chicken/Curry Cuts.png': { uri: CloudinaryImages.curryCuts },
+    '/assets/images/Product images/chicken/Leg piece.png': { uri: CloudinaryImages.legPiece },
+    '/assets/images/Product images/chicken/Chicken Wings.png': { uri: CloudinaryImages.chickenWings },
+    '/assets/images/Product images/Quail/quail.webp': { uri: CloudinaryImages.quailMeat },
+    '/assets/images/Product images/chicken/chicken boneless.png': { uri: CloudinaryImages.chickenBoneless },
+    '/assets/images/Product images/chicken/Briyani cut.webp': { uri: CloudinaryImages.biryaniCut },
+    '/assets/images/Product images/chicken/Chicken curry cut small pieces.png': { uri: CloudinaryImages.curryCutSmall },
+    '/assets/images/Product images/chicken/chicken curry cuts large pieces.png': { uri: CloudinaryImages.curryCutLarge },
+    '/assets/images/Product images/chicken/Boneless Cubes.png': { uri: CloudinaryImages.bonelessCubes },
+    '/assets/images/Product images/chicken/country chicken.png': { uri: CloudinaryImages.countryChicken },
+    '/assets/images/Product images/chicken/Drumsticks.png': { uri: CloudinaryImages.drumsticks },
+    '/assets/images/Product images/chicken/Gravy cut.webp': { uri: CloudinaryImages.gravyCut },
+    '/assets/images/Product images/chicken/chicken keema.png': { uri: CloudinaryImages.chickenKeema },
+    '/assets/images/Product images/chicken/chicken lollipop.png': { uri: CloudinaryImages.chickenLollipop },
+    '/assets/images/Product images/chicken/quail egg.png': { uri: CloudinaryImages.quailEgg },
+    '/assets/images/Product images/chicken/Raw Whole Chicken.png': { uri: CloudinaryImages.rawWholeChicken },
+    '/assets/images/Product images/chicken/white egg.png': { uri: CloudinaryImages.whiteEgg },
+    '/assets/images/Category images/chicken.avif': { uri: CloudinaryImages.categoryChicken },
+    '/assets/images/Category images/quail.png': { uri: CloudinaryImages.categoryKadai },
 };
 
 /**
- * Resolve product image URL — supports remote HTTP URLs (Firebase Storage),
+ * Resolve product image URL — supports remote HTTP URLs (Cloudinary CDN / Firebase Storage),
  * static web relative asset paths (/assets/images/...), and product name keyword matching.
  */
 export function getProductImageSource(imageURL?: string | null, meatName?: string): ImageSourcePropType {
     const searchTarget = `${imageURL ?? ''} ${meatName ?? ''}`.toLowerCase().trim();
     if (!searchTarget) return FALLBACK_IMAGE;
 
-    // Remote HTTP/HTTPS URL
+    // Remote HTTP/HTTPS URL (Cloudinary CDN or external)
     if (imageURL && (imageURL.startsWith('http://') || imageURL.startsWith('https://'))) {
         return { uri: imageURL };
     }
@@ -45,58 +46,58 @@ export function getProductImageSource(imageURL?: string | null, meatName?: strin
 
     // Smart semantic keyword matching for cuts & meats
     if (searchTarget.includes('biriyani') || searchTarget.includes('briyani')) {
-        return require('../assets/images/Product images/chicken/Briyani cut.webp');
+        return { uri: CloudinaryImages.biryaniCut };
     }
     if (searchTarget.includes('breast')) {
-        return require('../assets/images/Product images/chicken/Chicken Breasts.png');
+        return { uri: CloudinaryImages.chickenBreasts };
     }
     if (searchTarget.includes('boneless cube') || searchTarget.includes('cubes')) {
-        return require('../assets/images/Product images/chicken/Boneless Cubes.png');
+        return { uri: CloudinaryImages.bonelessCubes };
     }
     if (searchTarget.includes('boneless')) {
-        return require('../assets/images/Product images/chicken/chicken boneless.png');
+        return { uri: CloudinaryImages.chickenBoneless };
     }
     if (searchTarget.includes('drumstick')) {
-        return require('../assets/images/Product images/chicken/Drumsticks.png');
+        return { uri: CloudinaryImages.drumsticks };
     }
     if (searchTarget.includes('leg')) {
-        return require('../assets/images/Product images/chicken/Leg piece.png');
+        return { uri: CloudinaryImages.legPiece };
     }
     if (searchTarget.includes('wing')) {
-        return require('../assets/images/Product images/chicken/Chicken Wings.png');
+        return { uri: CloudinaryImages.chickenWings };
     }
     if (searchTarget.includes('lollipop')) {
-        return require('../assets/images/Product images/chicken/chicken lollipop.png');
+        return { uri: CloudinaryImages.chickenLollipop };
     }
     if (searchTarget.includes('keema')) {
-        return require('../assets/images/Product images/chicken/chicken keema.png');
+        return { uri: CloudinaryImages.chickenKeema };
     }
     if (searchTarget.includes('country') || searchTarget.includes('naatu')) {
-        return require('../assets/images/Product images/chicken/country chicken.png');
+        return { uri: CloudinaryImages.countryChicken };
     }
     if (searchTarget.includes('gravy')) {
-        return require('../assets/images/Product images/chicken/Gravy cut.webp');
+        return { uri: CloudinaryImages.gravyCut };
     }
     if (searchTarget.includes('quail egg')) {
-        return require('../assets/images/Product images/chicken/quail egg.png');
+        return { uri: CloudinaryImages.quailEgg };
     }
     if (searchTarget.includes('egg')) {
-        return require('../assets/images/Product images/chicken/white egg.png');
+        return { uri: CloudinaryImages.whiteEgg };
     }
     if (searchTarget.includes('quail') || searchTarget.includes('kaada')) {
-        return require('../assets/images/Product images/Quail/quail.webp');
+        return { uri: CloudinaryImages.quailMeat };
     }
     if (searchTarget.includes('whole')) {
-        return require('../assets/images/Product images/chicken/Raw Whole Chicken.png');
+        return { uri: CloudinaryImages.rawWholeChicken };
     }
     if (searchTarget.includes('small pieces') || searchTarget.includes('curry cut small')) {
-        return require('../assets/images/Product images/chicken/Chicken curry cut small pieces.png');
+        return { uri: CloudinaryImages.curryCutSmall };
     }
     if (searchTarget.includes('large pieces') || searchTarget.includes('curry cut large')) {
-        return require('../assets/images/Product images/chicken/chicken curry cuts large pieces.png');
+        return { uri: CloudinaryImages.curryCutLarge };
     }
     if (searchTarget.includes('curry')) {
-        return require('../assets/images/Product images/chicken/Curry Cuts.png');
+        return { uri: CloudinaryImages.curryCuts };
     }
 
     // Match by basename if exact key not found

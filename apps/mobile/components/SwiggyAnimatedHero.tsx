@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Button } from './ui/Button';
 import { Colors, FontSize, FontWeight, Spacing, BorderRadius, Shadows } from '../constants/Colors';
+import { CloudinaryImages } from '../constants/CloudinaryImages';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const AUTO_PLAY_INTERVAL = 4500;
@@ -38,7 +39,7 @@ const SLIDES: SlideItem[] = [
         title: 'Fresh Meat\nat Your Door',
         subtitle: 'Freshly cut daily in Mudukulattur.\nFastest delivery guaranteed.',
         btnText: 'Order Now',
-        image: require('../assets/images/hero section images/3D Speed Delivery Rider.png'),
+        image: { uri: CloudinaryImages.bannerSpeedDeliveryRider },
     },
     {
         id: 1,
@@ -47,7 +48,7 @@ const SLIDES: SlideItem[] = [
         title: 'Sunday Biryani\nGrand Feast?',
         subtitle: 'Pre-book tender cuts tonight.\nGuaranteed 7 AM delivery.',
         btnText: 'Pre-Book Now',
-        image: require('../assets/images/hero section images/biryani_cutout.png'),
+        image: { uri: CloudinaryImages.bannerBiryaniCutout },
     },
     {
         id: 2,
@@ -56,7 +57,7 @@ const SLIDES: SlideItem[] = [
         title: 'Save ₹50 on\nFirst Order',
         subtitle: 'Use code BISMI50 at checkout.\nValid on all meat products.',
         btnText: 'Claim ₹50',
-        image: require('../assets/images/hero section images/coupon_cutout.png'),
+        image: { uri: CloudinaryImages.bannerCouponCutout },
     },
 ];
 

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors, FontSize, FontWeight, FontFamily, Spacing, BorderRadius, Shadows } from '../constants/Colors';
 import { useCart } from '../context/CartContext';
+import { CloudinaryImages } from '../constants/CloudinaryImages';
 
 const SEARCH_PLACEHOLDERS = [
     'Chicken Curry Cut...',
@@ -34,35 +35,35 @@ const CATEGORY_STORIES = [
     {
         id: 'chicken',
         name: 'Chicken',
-        image: require('../assets/images/Category images/chicken.avif'),
+        image: { uri: CloudinaryImages.categoryChicken },
         badge: 'Fresh',
         bg: '#FEE2E2',
     },
     {
         id: 'mutton',
         name: 'Mutton',
-        image: require('../assets/images/hero section images/biryani_cutout.png'),
+        image: { uri: CloudinaryImages.bannerBiryaniCutout },
         badge: 'Prime',
         bg: '#FEF3C7',
     },
     {
         id: 'kadai',
         name: 'Kaadai',
-        image: require('../assets/images/Category images/quail.png'),
+        image: { uri: CloudinaryImages.categoryKadai },
         badge: 'Farm',
         bg: '#E0E7FF',
     },
     {
         id: 'express',
         name: '45-Min',
-        image: require('../assets/images/hero section images/3D Speed Delivery Rider.png'),
+        image: { uri: CloudinaryImages.bannerSpeedDeliveryRider },
         badge: 'Fast',
         bg: '#DCFCE7',
     },
     {
         id: 'offers',
         name: '₹50 OFF',
-        image: require('../assets/images/hero section images/coupon_cutout.png'),
+        image: { uri: CloudinaryImages.bannerCouponCutout },
         badge: 'Deal',
         bg: '#FCE7F3',
     },

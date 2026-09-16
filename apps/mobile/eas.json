@@ -12,20 +12,14 @@
       }
     },
     "preview": {
+      "channel": "preview",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_FIREBASE_API_KEY": "PLACEHOLDER",
-        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "PLACEHOLDER",
-        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "PLACEHOLDER",
-        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "PLACEHOLDER",
-        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "PLACEHOLDER",
-        "EXPO_PUBLIC_FIREBASE_APP_ID": "PLACEHOLDER"
       }
     },
     "production": {
+      "channel": "production",
       "distribution": "store",
       "android": {
         "buildType": "app-bundle"

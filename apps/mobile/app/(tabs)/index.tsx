@@ -21,16 +21,17 @@ import { Button } from '../../components/ui/Button';
 import { SHOP_CONFIG, CATEGORIES, formatCurrency } from '@bismi/core';
 import type { MeatType } from '@bismi/core';
 import { Colors, FontSize, FontWeight, FontFamily, Spacing, BorderRadius, Shadows } from '../../constants/Colors';
+import { CloudinaryImages } from '../../constants/CloudinaryImages';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Local category image assets copied from web
+// Category images hosted on Cloudinary CDN
 const CATEGORY_IMAGES: Record<string, ImageSourcePropType> = {
-    chicken: require('../../assets/images/Category images/chicken.avif'),
-    kadai: require('../../assets/images/Category images/quail.png'),
+    chicken: { uri: CloudinaryImages.categoryChicken },
+    kadai: { uri: CloudinaryImages.categoryKadai },
 };
 
-const SCOOTER_IMAGE = require('../../assets/images/why-choose-us/delivery_guy_scooter.png');
+const SCOOTER_IMAGE: ImageSourcePropType = { uri: CloudinaryImages.scooterDeliveryGuy };
 
 // ─── Today Available Strip ────────────────────────────────
 function TodayAvailableStrip() {

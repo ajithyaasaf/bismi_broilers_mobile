@@ -9,8 +9,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     scheme: 'bismi',
     userInterfaceStyle: 'light',
     icon: './assets/icon.png',
+    runtimeVersion: {
+        policy: 'appVersion',
+    },
     updates: {
         fallbackToCacheTimeout: 0,
+        checkAutomatically: 'ON_LOAD',
     },
     assetBundlePatterns: ['**/*'],
     ios: {
