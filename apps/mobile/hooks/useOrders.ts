@@ -25,31 +25,44 @@ export function useOrders(mobile: string | null) {
             return;
         }
 
+        if (!db) {
+            setOrders([]);
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
-        const q = query(
-            collection(db, 'orders'),
-            where('mobile', '==', mobile),
-            orderBy('createdAt', 'desc')
-        );
 
-        const unsubscribe = onSnapshot(
-            q,
-            (snap) => {
-                const docs = snap.docs.map((d) => ({
-                    id: d.id,
-                    ...d.data(),
-                })) as Order[];
-                setOrders(docs);
-                setLoading(false);
-            },
-            (err) => {
-                console.error('[useOrders]', err);
-                setError(err.message);
-                setLoading(false);
-            }
-        );
+        try {
+            const q = query(
+                collection(db, 'orders'),
+                where('mobile', '==', mobile),
+                orderBy('createdAt', 'desc')
+            );
 
-        return unsubscribe;
+            const unsubscribe = onSnapshot(
+                q,
+                (snap) => {
+                    const docs = snap.docs.map((d) => ({
+                        id: d.id,
+                        ...d.data(),
+                    })) as Order[];
+                    setOrders(docs);
+                    setLoading(false);
+                },
+                (err) => {
+                    console.error('[useOrders]', err);
+                    setError(err.message);
+                    setLoading(false);
+                }
+            );
+
+            return unsubscribe;
+        } catch (err) {
+            console.error('[useOrders] query init error:', err);
+            setError(err instanceof Error ? err.message : 'Database error');
+            setLoading(false);
+        }
     }, [mobile]);
 
     return { orders, loading, error };
@@ -69,20 +82,41 @@ export function useOrderById(orderId: string | null) {
             return;
         }
 
-        setLoading(true);
-        const ref = doc(db, 'orders', orderId);
-
-        const unsubscribe = onSnapshot(ref, (snap) => {
-            if (snap.exists()) {
-                setOrder({ id: snap.id, ...snap.data() } as Order);
-                setNotFound(false);
-            } else {
-                setNotFound(true);
-            }
+        if (!db) {
+            setNotFound(true);
             setLoading(false);
-        });
+            return;
+        }
 
-        return unsubscribe;
+        setLoading(true);
+
+        try {
+            const ref = doc(db, 'orders', orderId);
+
+            const unsubscribe = onSnapshot(
+                ref,
+                (snap) => {
+                    if (snap.exists()) {
+                        setOrder({ id: snap.id, ...snap.data() } as Order);
+                        setNotFound(false);
+                    } else {
+                        setNotFound(true);
+                    }
+                    setLoading(false);
+                },
+                (err) => {
+                    console.error('[useOrderById] snapshot error:', err);
+                    setNotFound(true);
+                    setLoading(false);
+                }
+            );
+
+            return unsubscribe;
+        } catch (err) {
+            console.error('[useOrderById] init error:', err);
+            setNotFound(true);
+            setLoading(false);
+        }
     }, [orderId]);
 
     return { order, loading, notFound };

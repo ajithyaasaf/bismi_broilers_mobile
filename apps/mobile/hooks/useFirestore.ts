@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import {
     collection,
     query,
-    where,
-    orderBy,
     onSnapshot,
     QueryConstraint,
     DocumentData,
@@ -13,7 +11,7 @@ import { db } from '@bismi/core';
 
 /**
  * Generic real-time Firestore collection hook.
- * Automatically subscribes and unsubscribes.
+ * Automatically subscribes and unsubscribes with defensive error handling.
  */
 export function useFirestoreCollection<T extends { id: string }>(
     collectionName: string,
@@ -30,27 +28,38 @@ export function useFirestoreCollection<T extends { id: string }>(
         setLoading(true);
         setError(null);
 
-        const ref = collection(db, collectionName);
-        const q = query(ref, ...constraints);
+        if (!db) {
+            setLoading(false);
+            return;
+        }
 
-        const unsubscribe = onSnapshot(
-            q,
-            (snapshot: QuerySnapshot<DocumentData>) => {
-                const docs = snapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                })) as T[];
-                setData(docs);
-                setLoading(false);
-            },
-            (err) => {
-                console.error(`[useFirestoreCollection] ${collectionName}:`, err);
-                setError(err.message);
-                setLoading(false);
-            }
-        );
+        try {
+            const ref = collection(db, collectionName);
+            const q = query(ref, ...constraints);
 
-        return unsubscribe;
+            const unsubscribe = onSnapshot(
+                q,
+                (snapshot: QuerySnapshot<DocumentData>) => {
+                    const docs = snapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    })) as T[];
+                    setData(docs);
+                    setLoading(false);
+                },
+                (err) => {
+                    console.error(`[useFirestoreCollection] ${collectionName}:`, err);
+                    setError(err.message);
+                    setLoading(false);
+                }
+            );
+
+            return unsubscribe;
+        } catch (err) {
+            console.error(`[useFirestoreCollection] init error on ${collectionName}:`, err);
+            setError(err instanceof Error ? err.message : 'Database error');
+            setLoading(false);
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [collectionName, tick]);
 

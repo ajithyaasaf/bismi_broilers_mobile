@@ -14,12 +14,29 @@ import { CartProvider } from '../context/CartContext';
 import { CustomerProvider } from '../context/CustomerContext';
 import { Colors, FontFamily } from '../constants/Colors';
 import { FloatingCartBar } from '../components/ui/FloatingCartBar';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+
+declare const ErrorUtils: any;
 
 /**
- * Root Layout — wraps every screen with global providers.
- * Order: GestureHandler > SafeArea > Customer > Cart > Stack Navigation
+ * Root Layout — wraps every screen with global providers and ErrorBoundary.
+ * Order: ErrorBoundary > GestureHandler > SafeArea > Customer > Cart > Stack Navigation
  */
 export default function RootLayout() {
+    // Intercept uncaught JS exceptions to prevent native Android process termination
+    useEffect(() => {
+        if (typeof ErrorUtils !== 'undefined' && ErrorUtils.getGlobalHandler && ErrorUtils.setGlobalHandler) {
+            const originalHandler = ErrorUtils.getGlobalHandler();
+            ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+                console.error('[GlobalErrorCatcher]', error, { isFatal });
+                // Pass to original handler with isFatal forced to false on production to prevent OS kill
+                if (originalHandler) {
+                    originalHandler(error, false);
+                }
+            });
+        }
+    }, []);
+
     // Inject Google Fonts link dynamically on Web
     useEffect(() => {
         if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -52,53 +69,55 @@ export default function RootLayout() {
     }
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <SafeAreaProvider>
-                <CustomerProvider>
-                    <CartProvider>
-                        <StatusBar style="dark" />
-                        <Stack
-                            screenOptions={{
-                                headerStyle: { backgroundColor: Colors.brand.crimson },
-                                headerTintColor: Colors.white,
-                                headerTitleStyle: { fontFamily: FontFamily.bold, fontSize: 18 },
-                                contentStyle: { backgroundColor: Colors.brand.cream },
-                                animation: 'slide_from_right',
-                            }}
-                        >
-                            {/* Tab navigator — no header here (tabs have their own) */}
-                            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-
-                            {/* Product Detail */}
-                            <Stack.Screen
-                                name="product/[id]"
-                                options={{ title: 'Product', headerBackTitle: 'Back' }}
-                            />
-
-                            {/* Checkout */}
-                            <Stack.Screen
-                                name="checkout"
-                                options={{
-                                    title: 'Checkout',
-                                    headerBackTitle: 'Cart',
-                                    presentation: 'card',
+        <ErrorBoundary>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+                <SafeAreaProvider>
+                    <CustomerProvider>
+                        <CartProvider>
+                            <StatusBar style="dark" />
+                            <Stack
+                                screenOptions={{
+                                    headerStyle: { backgroundColor: Colors.brand.crimson },
+                                    headerTintColor: Colors.white,
+                                    headerTitleStyle: { fontFamily: FontFamily.bold, fontSize: 18 },
+                                    contentStyle: { backgroundColor: Colors.brand.cream },
+                                    animation: 'slide_from_right',
                                 }}
-                            />
+                            >
+                                {/* Tab navigator — no header here (tabs have their own) */}
+                                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-                            {/* Order Confirmation */}
-                            <Stack.Screen
-                                name="order-confirm/[id]"
-                                options={{
-                                    title: 'Order Confirmed!',
-                                    headerBackVisible: false,
-                                    gestureEnabled: false,
-                                }}
-                            />
-                        </Stack>
-                        <FloatingCartBar />
-                    </CartProvider>
-                </CustomerProvider>
-            </SafeAreaProvider>
-        </GestureHandlerRootView>
+                                {/* Product Detail */}
+                                <Stack.Screen
+                                    name="product/[id]"
+                                    options={{ title: 'Product', headerBackTitle: 'Back' }}
+                                />
+
+                                {/* Checkout */}
+                                <Stack.Screen
+                                    name="checkout"
+                                    options={{
+                                        title: 'Checkout',
+                                        headerBackTitle: 'Cart',
+                                        presentation: 'card',
+                                    }}
+                                />
+
+                                {/* Order Confirmation */}
+                                <Stack.Screen
+                                    name="order-confirm/[id]"
+                                    options={{
+                                        title: 'Order Confirmed!',
+                                        headerBackVisible: false,
+                                        gestureEnabled: false,
+                                    }}
+                                />
+                            </Stack>
+                            <FloatingCartBar />
+                        </CartProvider>
+                    </CustomerProvider>
+                </SafeAreaProvider>
+            </GestureHandlerRootView>
+        </ErrorBoundary>
     );
 }

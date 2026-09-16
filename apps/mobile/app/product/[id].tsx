@@ -15,6 +15,7 @@ import { db, formatCurrency, SHOP_CONFIG } from '@bismi/core';
 import type { MeatType } from '@bismi/core';
 import { useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
+import { FALLBACK_PRODUCTS } from '../../hooks/useProducts';
 import { getProductImageSource } from '../../utils/imageResolver';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -29,21 +30,53 @@ export default function ProductDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { addItem, items } = useCart();
 
-    const [product, setProduct] = useState<MeatType | null>(null);
+    const [product, setProduct] = useState<MeatType | null>(() => {
+        return FALLBACK_PRODUCTS.find((p) => p.id === id || p.name.toLowerCase().includes((id || '').toLowerCase())) || null;
+    });
     const [loading, setLoading] = useState(true);
     const [qty, setQty] = useState<number>(0.5); // kg or piece count
     const [cuttingPref, setCuttingPref] = useState('');
 
     useEffect(() => {
-        if (!id) return;
-        const ref = doc(db, 'meatTypes', id);
-        const unsub = onSnapshot(ref, (snap) => {
-            if (snap.exists()) {
-                setProduct({ id: snap.id, ...snap.data() } as MeatType);
-            }
+        if (!id) {
             setLoading(false);
-        });
-        return unsub;
+            return;
+        }
+
+        const fallbackItem = FALLBACK_PRODUCTS.find(
+            (p) => p.id === id || p.name.toLowerCase().includes(id.toLowerCase())
+        );
+
+        if (!db) {
+            if (fallbackItem) setProduct(fallbackItem);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const ref = doc(db, 'meatTypes', id);
+            const unsub = onSnapshot(
+                ref,
+                (snap) => {
+                    if (snap.exists()) {
+                        setProduct({ id: snap.id, ...snap.data() } as MeatType);
+                    } else if (fallbackItem) {
+                        setProduct(fallbackItem);
+                    }
+                    setLoading(false);
+                },
+                (err) => {
+                    console.warn('[ProductDetail] snapshot error, using fallback:', err);
+                    if (fallbackItem) setProduct(fallbackItem);
+                    setLoading(false);
+                }
+            );
+            return unsub;
+        } catch (err) {
+            console.warn('[ProductDetail] init error:', err);
+            if (fallbackItem) setProduct(fallbackItem);
+            setLoading(false);
+        }
     }, [id]);
 
     const alreadyInCart = items.some((i) => i.meatTypeId === id);
