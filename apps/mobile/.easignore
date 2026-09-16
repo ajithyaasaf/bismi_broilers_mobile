@@ -6,6 +6,14 @@ web-build/
 .turbo/
 .cache/
 
+# Android local build artifacts & Gradle caches (1.6GB+)
+android/.gradle/
+android/build/
+android/app/build/
+android/.kotlin/
+android/*.apk
+android/*.aab
+
 # OS and Git
 .git/
 .DS_Store
