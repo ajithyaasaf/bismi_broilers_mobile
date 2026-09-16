@@ -9,10 +9,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     scheme: 'bismi',
     userInterfaceStyle: 'light',
     icon: './assets/icon.png',
+    owner: 'ajithkrizz',
     runtimeVersion: {
         policy: 'appVersion',
     },
     updates: {
+        url: 'https://u.expo.dev/36d50856-920a-4837-b5d8-56ea938afd0d',
         fallbackToCacheTimeout: 0,
         checkAutomatically: 'ON_LOAD',
     },
@@ -76,7 +78,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         firebaseMessagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
         firebaseAppId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
         eas: {
-            projectId: 'YOUR_EAS_PROJECT_ID', // Update after `eas build:configure`
+            projectId: '36d50856-920a-4837-b5d8-56ea938afd0d',
         },
     },
 });

@@ -1,102 +1,107 @@
-# 🚀 Bismi Broilers Platform — Operational Commands Manual
+# 🚀 Bismi Broilers Platform — Master Commands Guide
 
-A quick-reference guide for developing, testing, building, and deploying the Bismi Broilers mobile and shared core platform.
+A simple, practical guide for building APKs, pushing Over-The-Air (OTA) updates, running local development, and deploying both the Mobile App and Website.
 
 ---
 
-## 📌 1. Development & Local Run
+## 📱 1. Build Installable APK for Android Phone (EAS Build)
 
-Ensure you are in the workspace root (`bismi-platform`).
+Use these commands whenever you want to generate a `.apk` file to install directly on your Android phone.
 
-### Start Expo Metro Bundler
+### Step 1: Navigate to Mobile directory
 ```bash
-# Start the Metro development server with interactive menu
-npm run dev
-# or
-npm run mobile
+cd apps/mobile
 ```
 
-### Run on Specific Targets
+### Step 2: Build the Standalone APK (Preview Profile)
 ```bash
-# Run on Web Browser (Instant Preview)
+npx eas build --platform android --profile preview
+```
+
+> [!TIP]
+> **How to install on phone**:
+> 1. When EAS finishes building in the cloud (~4–8 mins), it prints a **QR Code** and **Download URL** in your terminal.
+> 2. Scan the QR code or open the link on your mobile phone to download and install `bismi-broilers.apk`.
+
+---
+
+## ⚡ 2. Push Instant Over-The-Air (OTA) Updates (No APK Rebuild Required!)
+
+Whenever you modify components, fix bugs, update text, or change styles, **you do NOT need to rebuild the APK or reinstall the app on phones**.
+
+Push an instant OTA update directly to all installed devices:
+
+```bash
+cd apps/mobile
+npx eas update --channel preview --message "Fixed cart button & updated banners"
+```
+
+> [!NOTE]
+> **How OTA works on user phones**:
+> - Thanks to Cloudinary CDN, the OTA bundle is only **~1.2 MB**.
+> - The moment any user opens the installed app on their phone, the update silently downloads in **1–2 seconds**.
+> - The new code goes live on their next app launch!
+
+---
+
+## 💻 3. Local Mobile App Development
+
+Run the mobile app locally on your computer, browser, or connected phone.
+
+```bash
+# Start Metro bundler (from root):
+npm run dev
+
+# Run directly on Web Browser (instant UI preview):
 npm --prefix apps/mobile run web
 
-# Run on Android Emulator or Connected USB Device
+# Run on connected Android phone / Emulator:
 npm --prefix apps/mobile run android
-
-# Run on iOS Simulator (macOS only)
-npm --prefix apps/mobile run ios
 ```
 
 ---
 
-## 📌 2. Type Checking & Code Quality
-
-Always run type checks before committing or building:
+## 🌐 4. Website Development & Production (`bismi_website`)
 
 ```bash
-# Typecheck both @bismi/core and @bismi/mobile workspaces simultaneously
-npm run typecheck
+# Navigate to website directory
+cd G:\Godivatech\Prakash\Analyzer\tech\Bismi\bismi_website
 
-# Typecheck only the shared business core
-npm run typecheck --workspace=packages/core
+# Start Next.js local development server:
+npm run dev
 
-# Typecheck only the mobile application
-npm run typecheck --workspace=apps/mobile
+# Build for production deployment:
+npm run build
 ```
 
 ---
 
-## 📌 3. Cloudinary Asset Synchronization
-
-To sync, organize, or update media assets in Cloudinary under the structured `bismi/` folder hierarchy:
+## ☁️ 5. Cloudinary & Media Management
 
 ```bash
-# Uploads product, category, and banner media to Cloudinary (f_auto, q_auto optimized)
+# Re-upload or update catalog images in Cloudinary (under bismi/ folder hierarchy):
 node scripts/upload-to-cloudinary.mjs
 ```
 
 ---
 
-## 📌 4. Standalone Android Builds (EAS Build)
+## 🔍 6. Typecheck & Code Quality
 
-Build installable APKs or Google Play App Bundles using Expo Application Services (EAS):
+Always run this before building to ensure 0 TypeScript errors:
 
 ```bash
-# 1. Standalone Preview APK (Directly installable on any Android phone for testing)
-npm --prefix apps/mobile run build:android:preview
-# or directly via EAS CLI:
-cd apps/mobile && eas build --platform android --profile preview
-
-# 2. Production Android App Bundle (.aab for Google Play Store submission)
-npm --prefix apps/mobile run build:android:prod
-# or directly via EAS CLI:
-cd apps/mobile && eas build --platform android --profile production
-
-# 3. Submit directly to Google Play Console
-npm --prefix apps/mobile run submit:android
+# Typecheck both packages/core and apps/mobile:
+npm run typecheck
 ```
 
 ---
 
-## 📌 5. Instant Over-The-Air (OTA) Updates (EAS Update)
+## 📂 Quick Reference
 
-Because media assets are delivered via Cloudinary CDN, the app bundle is ultra-lightweight (< 2 MB). You can push instant JS/UI updates to all installed user devices in under 2 seconds without rebuilding APKs or submitting to Google Play:
-
-```bash
-# Publish instant OTA update to Production users
-cd apps/mobile && eas update --branch production --message "Fix: Updated menu pricing and holiday schedule"
-
-# Publish instant OTA update to Preview / Internal testers
-cd apps/mobile && eas update --branch preview --message "Test: New cart animations"
-```
-
----
-
-## 📌 6. Monorepo Structure Reference
-
-| Path | Description |
-| :--- | :--- |
-| `packages/core` | Pure TypeScript business logic (cart reducer, slot control, pricing, WhatsApp/UPI utils, Firestore). |
-| `apps/mobile` | Expo SDK 57 React Native mobile application (Expo Router v57, Reanimated 4, Gesture Handler). |
-| `scripts/` | Tooling & migration automation scripts (Cloudinary upload & asset optimization). |
+| Action | Command | Where to Run |
+| :--- | :--- | :--- |
+| **Build Android APK** | `npx eas build --platform android --profile preview` | `apps/mobile` |
+| **Push OTA Update** | `npx eas update --channel preview --message "..."` | `apps/mobile` |
+| **Start Mobile Dev** | `npm run dev` | Project Root |
+| **Start Website Dev** | `npm run dev` | `bismi_website` |
+| **Check TypeScript** | `npm run typecheck` | Project Root |
